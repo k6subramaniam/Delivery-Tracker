@@ -43,8 +43,8 @@ export default function MapScreen() {
     setRefreshing(false);
   }, []);
 
-  const openInMaps = (lat: number, lng: number, name: string) => {
-    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  const openInMaps = (lat: number, lng: number) => {
+    const url = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=18/${lat}/${lng}`;
     Linking.openURL(url);
   };
 
@@ -104,7 +104,7 @@ export default function MapScreen() {
                   <TouchableOpacity
                     key={loc.driver_id}
                     style={[styles.mapMarker, { left: `${xPercent}%`, top: `${yPercent}%` }]}
-                    onPress={() => openInMaps(loc.latitude, loc.longitude, loc.driver_name)}
+                    onPress={() => openInMaps(loc.latitude, loc.longitude)}
                   >
                     <View style={styles.markerPulse} />
                     <View style={styles.markerDot}>
@@ -115,7 +115,7 @@ export default function MapScreen() {
                 );
               })}
             </View>
-            <Text style={styles.mapHint}>Tap a driver to open in Google Maps</Text>
+            <Text style={styles.mapHint}>Tap a driver to open in OpenStreetMap</Text>
           </View>
 
           {/* Driver List */}
@@ -124,7 +124,7 @@ export default function MapScreen() {
             <TouchableOpacity
               key={location.driver_id}
               style={styles.driverCard}
-              onPress={() => openInMaps(location.latitude, location.longitude, location.driver_name)}
+              onPress={() => openInMaps(location.latitude, location.longitude)}
             >
               <View style={styles.driverIcon}>
                 <Ionicons name="person" size={20} color="#3B82F6" />

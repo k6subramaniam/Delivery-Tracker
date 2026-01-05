@@ -17,7 +17,6 @@ import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/se
 import { Task, Category, Priority, User } from '../../src/types';
 import { useAuth } from '../../src/context/AuthContext';
 import { format } from 'date-fns';
-import { WebDatePicker } from '../../src/components/WebDatePicker';
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,7 +40,6 @@ export default function TaskDetailScreen() {
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('pending');
-  const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
@@ -69,7 +67,6 @@ export default function TaskDetailScreen() {
       setSelectedPriority(taskData.priority_id);
       setSelectedDriver(taskData.assigned_driver_id);
       setSelectedStatus(taskData.status);
-      setDueDate(taskData.due_date ? new Date(taskData.due_date) : null);
 
       if (isAdmin) {
         const driversRes = await driversAPI.getAll();
@@ -104,7 +101,6 @@ export default function TaskDetailScreen() {
         priority_id: selectedPriority,
         assigned_driver_id: selectedDriver,
         status: selectedStatus,
-        due_date: dueDate?.toISOString(),
       });
       setIsEditing(false);
       loadData();
@@ -355,15 +351,6 @@ export default function TaskDetailScreen() {
                 </ScrollView>
               </View>
             )}
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Due Date</Text>
-              <WebDatePicker
-                value={dueDate}
-                onChange={setDueDate}
-                placeholder="Select due date"
-              />
-            </View>
           </>
         ) : (
           // View Mode

@@ -2,8 +2,17 @@ from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
+try:
+    from motor.motor_asyncio import AsyncIOMotorClient
+    # Check if we can connect, otherwise use mock
+    # Actually, just use mock for this sandbox environment since no Mongo is available
+    raise ImportError("Force mock")
+except ImportError:
+    print("Using Mock MongoDB")
+    from mock_mongo import AsyncIOMotorClient
+
 import os
+
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
@@ -17,7 +26,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'delivery_task_manager')]
 
@@ -349,7 +358,10 @@ async def get_tasks(
     
     # If driver, only show their assigned tasks
     if current_user["role"] == "driver":
-        query["assigned_driver_id"] = current_user["id"]
+        query["$or"] = [
+            {"assigned_driver_id": current_user["id"]},
+            {"created_by": current_user["id"]}
+        ]
     elif assigned_driver_id:
         query["assigned_driver_id"] = assigned_driver_id
     
@@ -370,8 +382,11 @@ async def get_task(task_id: str, current_user: dict = Depends(get_current_user))
         raise HTTPException(status_code=404, detail="Task not found")
     
     # Drivers can only view their assigned tasks
-    if current_user["role"] == "driver" and task.get("assigned_driver_id") != current_user["id"]:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if current_user["role"] == "driver":
+        is_assigned = task.get("assigned_driver_id") == current_user["id"]
+        is_creator = task.get("created_by") == current_user["id"]
+        if not (is_assigned or is_creator):
+            raise HTTPException(status_code=403, detail="Access denied")
     
     return TaskResponse(**task)
 

@@ -17,7 +17,7 @@ import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/se
 import { Task, Category, Priority, User } from '../../src/types';
 import { useAuth } from '../../src/context/AuthContext';
 import { format } from 'date-fns';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { WebDatePicker } from '../../src/components/WebDatePicker';
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -39,6 +39,7 @@ export default function TaskDetailScreen() {
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('pending');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     loadData();

@@ -428,7 +428,6 @@ export default function TasksScreen() {
                 </ScrollView>
               </View>
             )}
-
           </ScrollView>
         </SafeAreaView>
       </Modal>

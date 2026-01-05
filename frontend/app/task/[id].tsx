@@ -358,31 +358,11 @@ export default function TaskDetailScreen() {
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Due Date</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-                <Text style={styles.dateText}>
-                  {dueDate ? dueDate.toLocaleDateString() : 'Select date'}
-                </Text>
-                {dueDate && (
-                  <TouchableOpacity onPress={() => setDueDate(null)}>
-                    <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-                  </TouchableOpacity>
-                )}
-              </TouchableOpacity>
-              {showDatePicker && (
-                <DateTimePicker
-                  value={dueDate || new Date()}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={(event, date) => {
-                    setShowDatePicker(Platform.OS === 'ios');
-                    if (date) setDueDate(date);
-                  }}
-                />
-              )}
+              <WebDatePicker
+                value={dueDate}
+                onChange={setDueDate}
+                placeholder="Select due date"
+              />
             </View>
           </>
         ) : (

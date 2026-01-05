@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { driversAPI } from '../../src/services/api';
 import { DriverLocation } from '../../src/types';
 import { format } from 'date-fns';
@@ -43,9 +44,27 @@ export default function MapScreen() {
     setRefreshing(false);
   }, []);
 
-  const openInMaps = (lat: number, lng: number, name: string) => {
-    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  const openInMaps = (lat: number, lng: number) => {
+    const url = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=18/${lat}/${lng}`;
     Linking.openURL(url);
+  };
+
+  const getMapRegion = () => {
+    const latitudes = locations.map((location) => location.latitude);
+    const longitudes = locations.map((location) => location.longitude);
+    const minLat = Math.min(...latitudes);
+    const maxLat = Math.max(...latitudes);
+    const minLng = Math.min(...longitudes);
+    const maxLng = Math.max(...longitudes);
+    const latitudeDelta = Math.max(0.02, (maxLat - minLat) * 1.5);
+    const longitudeDelta = Math.max(0.02, (maxLng - minLng) * 1.5);
+
+    return {
+      latitude: (minLat + maxLat) / 2,
+      longitude: (minLng + maxLng) / 2,
+      latitudeDelta,
+      longitudeDelta,
+    };
   };
 
   if (loading) {
@@ -84,38 +103,40 @@ export default function MapScreen() {
         >
           {/* Map Visual Representation */}
           <View style={styles.mapVisual}>
-            <View style={styles.mapBackground}>
-              {/* Grid lines for visual effect */}
-              <View style={styles.gridOverlay}>
-                {[...Array(5)].map((_, i) => (
-                  <View key={`h-${i}`} style={[styles.gridLine, styles.horizontalLine, { top: `${i * 25}%` }]} />
-                ))}
-                {[...Array(5)].map((_, i) => (
-                  <View key={`v-${i}`} style={[styles.gridLine, styles.verticalLine, { left: `${i * 25}%` }]} />
-                ))}
-              </View>
-              
-              {/* Driver markers positioned randomly for visual */}
-              {locations.map((loc, index) => {
-                // Create pseudo-random positions based on coordinates
-                const xPercent = ((Math.abs(loc.longitude) % 90) / 90) * 80 + 10;
-                const yPercent = ((Math.abs(loc.latitude) % 90) / 90) * 80 + 10;
-                return (
-                  <TouchableOpacity
-                    key={loc.driver_id}
-                    style={[styles.mapMarker, { left: `${xPercent}%`, top: `${yPercent}%` }]}
-                    onPress={() => openInMaps(loc.latitude, loc.longitude, loc.driver_name)}
-                  >
+            <MapView
+              style={styles.mapBackground}
+              initialRegion={getMapRegion()}
+              mapType="none"
+              pitchEnabled={false}
+              rotateEnabled={false}
+            >
+              <UrlTile
+                urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                maximumZ={19}
+                flipY={false}
+              />
+              {locations.map((location) => (
+                <Marker
+                  key={location.driver_id}
+                  coordinate={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  }}
+                  title={location.driver_name}
+                  description={`Updated ${format(new Date(location.timestamp), 'MMM d, h:mm a')}`}
+                  onPress={() => openInMaps(location.latitude, location.longitude)}
+                >
+                  <View style={styles.markerContainer}>
                     <View style={styles.markerPulse} />
                     <View style={styles.markerDot}>
                       <Ionicons name="car" size={14} color="#FFFFFF" />
                     </View>
-                    <Text style={styles.markerLabel}>{loc.driver_name.split(' ')[0]}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            <Text style={styles.mapHint}>Tap a driver to open in Google Maps</Text>
+                    <Text style={styles.markerLabel}>{location.driver_name.split(' ')[0]}</Text>
+                  </View>
+                </Marker>
+              ))}
+            </MapView>
+            <Text style={styles.mapHint}>Tap a driver marker to open in OpenStreetMap</Text>
           </View>
 
           {/* Driver List */}
@@ -124,7 +145,7 @@ export default function MapScreen() {
             <TouchableOpacity
               key={location.driver_id}
               style={styles.driverCard}
-              onPress={() => openInMaps(location.latitude, location.longitude, location.driver_name)}
+              onPress={() => openInMaps(location.latitude, location.longitude)}
             >
               <View style={styles.driverIcon}>
                 <Ionicons name="person" size={20} color="#3B82F6" />
@@ -216,36 +237,12 @@ const styles = StyleSheet.create({
   },
   mapBackground: {
     height: 280,
-    backgroundColor: '#E0F2FE',
     borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
   },
-  gridOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  gridLine: {
-    position: 'absolute',
-    backgroundColor: '#BAE6FD',
-  },
-  horizontalLine: {
-    left: 0,
-    right: 0,
-    height: 1,
-  },
-  verticalLine: {
-    top: 0,
-    bottom: 0,
-    width: 1,
-  },
-  mapMarker: {
-    position: 'absolute',
+  markerContainer: {
     alignItems: 'center',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
   },
   markerPulse: {
     position: 'absolute',

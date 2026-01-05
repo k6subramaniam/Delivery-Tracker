@@ -131,7 +131,7 @@ export default function TasksScreen() {
         amount: parseFloat(amount),
         category_id: selectedCategory,
         priority_id: selectedPriority,
-        assigned_driver_id: selectedDriver,
+        assigned_driver_id: isAdmin ? selectedDriver : (user?.role === 'driver' ? user.id : null),
       });
       setShowAddModal(false);
       resetForm();

@@ -8,7 +8,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -351,6 +350,7 @@ export default function TaskDetailScreen() {
                 </ScrollView>
               </View>
             )}
+
           </>
         ) : (
           // View Mode
@@ -576,22 +576,6 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     fontWeight: '500',
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 10,
-  },
-  dateText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#6B7280',
   },
   titleSection: {
     flexDirection: 'row',

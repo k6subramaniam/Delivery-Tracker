@@ -6,12 +6,15 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { driversAPI } from '../../src/services/api';
 import { DriverLocation } from '../../src/types';
 import { format } from 'date-fns';
+
+const GOOGLE_MAPS_API_KEY = 'AIzaSyASjCRJRncSqfk-rn-iasw7MkDzezmKIL8';
 
 export default function MapScreen() {
   const [locations, setLocations] = useState<DriverLocation[]>([]);
@@ -41,6 +44,24 @@ export default function MapScreen() {
     setRefreshing(false);
   }, []);
 
+  // Generate markers string for Google Maps Static API or embed
+  const generateMapUrl = () => {
+    if (locations.length === 0) {
+      // Default center (San Francisco)
+      return `https://www.google.com/maps/embed/v1/view?key=${GOOGLE_MAPS_API_KEY}&center=37.7749,-122.4194&zoom=12`;
+    }
+
+    // If we have locations, create markers
+    const markers = locations.map((loc, index) => 
+      `${loc.latitude},${loc.longitude}`
+    ).join('|');
+
+    const center = locations[0];
+    
+    // Use places mode with first location
+    return `https://www.google.com/maps/embed/v1/view?key=${GOOGLE_MAPS_API_KEY}&center=${center.latitude},${center.longitude}&zoom=12`;
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -68,42 +89,63 @@ export default function MapScreen() {
           </Text>
         </View>
       ) : (
-        <ScrollView
-          style={styles.content}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          {/* Web Map Placeholder */}
-          <View style={styles.webMapPlaceholder}>
-            <Ionicons name="map" size={48} color="#3B82F6" />
-            <Text style={styles.webMapText}>Map View</Text>
-            <Text style={styles.webMapSubtext}>
-              Full map available on mobile app
-            </Text>
+        <View style={styles.contentContainer}>
+          {/* Google Maps Embed */}
+          <View style={styles.mapContainer}>
+            {Platform.OS === 'web' ? (
+              <iframe
+                src={generateMapUrl()}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  borderRadius: 12,
+                }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            ) : (
+              <View style={styles.mapPlaceholder}>
+                <Ionicons name="map" size={48} color="#3B82F6" />
+                <Text style={styles.mapPlaceholderText}>Map View</Text>
+                <Text style={styles.mapPlaceholderSubtext}>
+                  {locations.length} driver{locations.length !== 1 ? 's' : ''} on the map
+                </Text>
+              </View>
+            )}
           </View>
 
-          <Text style={styles.listTitle}>Active Drivers</Text>
-          {locations.map((location) => (
-            <View key={location.driver_id} style={styles.driverCard}>
-              <View style={styles.driverIcon}>
-                <Ionicons name="person" size={20} color="#3B82F6" />
+          {/* Driver List */}
+          <ScrollView
+            style={styles.driverList}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.listTitle}>Active Drivers</Text>
+            {locations.map((location) => (
+              <View key={location.driver_id} style={styles.driverCard}>
+                <View style={styles.driverIcon}>
+                  <Ionicons name="person" size={20} color="#3B82F6" />
+                </View>
+                <View style={styles.driverInfo}>
+                  <Text style={styles.driverName}>{location.driver_name}</Text>
+                  <Text style={styles.driverTime}>
+                    Updated {format(new Date(location.timestamp), 'MMM d, h:mm a')}
+                  </Text>
+                  <Text style={styles.coordinates}>
+                    {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                  </Text>
+                </View>
+                <View style={styles.locationBadge}>
+                  <Ionicons name="location" size={14} color="#10B981" />
+                </View>
               </View>
-              <View style={styles.driverInfo}>
-                <Text style={styles.driverName}>{location.driver_name}</Text>
-                <Text style={styles.driverTime}>
-                  Updated {format(new Date(location.timestamp), 'MMM d, h:mm a')}
-                </Text>
-                <Text style={styles.coordinates}>
-                  {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-                </Text>
-              </View>
-              <View style={styles.locationBadge}>
-                <Ionicons name="location" size={14} color="#10B981" />
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -164,30 +206,37 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  content: {
+  contentContainer: {
     flex: 1,
-    padding: 16,
   },
-  webMapPlaceholder: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 16,
-    padding: 40,
+  mapContainer: {
+    height: 300,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#E5E7EB',
+  },
+  mapPlaceholder: {
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: '#3B82F6',
-    borderStyle: 'dashed',
+    justifyContent: 'center',
+    backgroundColor: '#EFF6FF',
   },
-  webMapText: {
+  mapPlaceholderText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#3B82F6',
     marginTop: 12,
   },
-  webMapSubtext: {
+  mapPlaceholderSubtext: {
     fontSize: 14,
     color: '#6B7280',
     marginTop: 4,
+  },
+  driverList: {
+    flex: 1,
+    paddingHorizontal: 16,
   },
   listTitle: {
     fontSize: 16,

@@ -8,7 +8,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -17,7 +16,6 @@ import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/se
 import { Task, Category, Priority, User } from '../../src/types';
 import { useAuth } from '../../src/context/AuthContext';
 import { format } from 'date-fns';
-import { WebDatePicker } from '../../src/components/WebDatePicker';
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,8 +39,6 @@ export default function TaskDetailScreen() {
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('pending');
-  const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -69,7 +65,6 @@ export default function TaskDetailScreen() {
       setSelectedPriority(taskData.priority_id);
       setSelectedDriver(taskData.assigned_driver_id);
       setSelectedStatus(taskData.status);
-      setDueDate(taskData.due_date ? new Date(taskData.due_date) : null);
 
       if (isAdmin) {
         const driversRes = await driversAPI.getAll();
@@ -104,7 +99,6 @@ export default function TaskDetailScreen() {
         priority_id: selectedPriority,
         assigned_driver_id: selectedDriver,
         status: selectedStatus,
-        due_date: dueDate?.toISOString(),
       });
       setIsEditing(false);
       loadData();
@@ -356,14 +350,6 @@ export default function TaskDetailScreen() {
               </View>
             )}
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Due Date</Text>
-              <WebDatePicker
-                value={dueDate}
-                onChange={setDueDate}
-                placeholder="Select due date"
-              />
-            </View>
           </>
         ) : (
           // View Mode
@@ -589,22 +575,6 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     fontWeight: '500',
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 10,
-  },
-  dateText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#6B7280',
   },
   titleSection: {
     flexDirection: 'row',

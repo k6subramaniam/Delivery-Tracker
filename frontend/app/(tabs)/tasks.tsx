@@ -10,7 +10,6 @@ import {
   TextInput,
   Alert,
   Modal,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +18,6 @@ import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/se
 import { TaskCard } from '../../src/components/TaskCard';
 import { Task, Category, Priority, User } from '../../src/types';
 import { useRouter } from 'expo-router';
-import { WebDatePicker } from '../../src/components/WebDatePicker';
 
 export default function TasksScreen() {
   const { user } = useAuth();
@@ -44,7 +42,6 @@ export default function TasksScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
-  const [dueDate, setDueDate] = useState<Date | null>(null);
 
   const loadData = async () => {
     try {
@@ -114,7 +111,6 @@ export default function TasksScreen() {
     setSelectedCategory(null);
     setSelectedPriority(null);
     setSelectedDriver(null);
-    setDueDate(null);
   };
 
   const handleAddTask = async () => {
@@ -136,7 +132,6 @@ export default function TasksScreen() {
         category_id: selectedCategory,
         priority_id: selectedPriority,
         assigned_driver_id: selectedDriver,
-        due_date: dueDate?.toISOString(),
       });
       setShowAddModal(false);
       resetForm();
@@ -434,14 +429,6 @@ export default function TasksScreen() {
               </View>
             )}
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Due Date</Text>
-              <WebDatePicker
-                value={dueDate}
-                onChange={setDueDate}
-                placeholder="Select due date"
-              />
-            </View>
           </ScrollView>
         </SafeAreaView>
       </Modal>

@@ -16,6 +16,9 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === '(auth)';
     
+    // Debug logging
+    console.log('Auth Check:', { isAuthenticated, inAuthGroup, segment: segments[0] });
+
     if (isAuthenticated && inAuthGroup) {
       // If signed in and in auth group, redirect to tabs
       router.replace('/(tabs)');

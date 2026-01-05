@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,41 +13,15 @@ import { driversAPI } from '../../src/services/api';
 import { DriverLocation } from '../../src/types';
 import { format } from 'date-fns';
 
-// Conditionally import MapView for native platforms only
-let MapView: any = null;
-let Marker: any = null;
-let PROVIDER_GOOGLE: any = null;
-
-if (Platform.OS !== 'web') {
-  const Maps = require('react-native-maps');
-  MapView = Maps.default;
-  Marker = Maps.Marker;
-  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
-}
-
-const GOOGLE_MAPS_API_KEY = 'AIzaSyASjCRJRncSqfk-rn-iasw7MkDzezmKIL8';
-
 export default function MapScreen() {
   const [locations, setLocations] = useState<DriverLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const mapRef = useRef<MapView>(null);
 
   const loadLocations = async () => {
     try {
       const response = await driversAPI.getLocations();
       setLocations(response.data);
-
-      if (response.data.length > 0 && mapRef.current) {
-        const coords = response.data.map((loc: DriverLocation) => ({
-          latitude: loc.latitude,
-          longitude: loc.longitude,
-        }));
-        mapRef.current.fitToCoordinates(coords, {
-          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-          animated: true,
-        });
-      }
     } catch (error) {
       console.error('Error loading locations:', error);
     } finally {
@@ -58,7 +31,7 @@ export default function MapScreen() {
 
   useEffect(() => {
     loadLocations();
-    const interval = setInterval(loadLocations, 30000); // Refresh every 30s
+    const interval = setInterval(loadLocations, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -95,65 +68,42 @@ export default function MapScreen() {
           </Text>
         </View>
       ) : (
-        <View style={styles.mapContainer}>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-            initialRegion={{
-              latitude: locations[0]?.latitude || 37.78825,
-              longitude: locations[0]?.longitude || -122.4324,
-              latitudeDelta: 0.1,
-              longitudeDelta: 0.1,
-            }}
-            showsUserLocation={false}
-            showsMyLocationButton={false}
-          >
-            {locations.map((location) => (
-              <Marker
-                key={location.driver_id}
-                coordinate={{
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                }}
-                title={location.driver_name}
-                description={`Last update: ${format(new Date(location.timestamp), 'h:mm a')}`}
-              >
-                <View style={styles.markerContainer}>
-                  <View style={styles.marker}>
-                    <Ionicons name="car" size={20} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.markerPointer} />
-                </View>
-              </Marker>
-            ))}
-          </MapView>
+        <ScrollView
+          style={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {/* Web Map Placeholder */}
+          <View style={styles.webMapPlaceholder}>
+            <Ionicons name="map" size={48} color="#3B82F6" />
+            <Text style={styles.webMapText}>Map View</Text>
+            <Text style={styles.webMapSubtext}>
+              Full map available on mobile app
+            </Text>
+          </View>
 
-          <ScrollView
-            style={styles.driverList}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          >
-            <Text style={styles.listTitle}>Active Drivers</Text>
-            {locations.map((location) => (
-              <View key={location.driver_id} style={styles.driverCard}>
-                <View style={styles.driverIcon}>
-                  <Ionicons name="person" size={20} color="#3B82F6" />
-                </View>
-                <View style={styles.driverInfo}>
-                  <Text style={styles.driverName}>{location.driver_name}</Text>
-                  <Text style={styles.driverTime}>
-                    Updated {format(new Date(location.timestamp), 'MMM d, h:mm a')}
-                  </Text>
-                </View>
-                <View style={styles.locationBadge}>
-                  <Ionicons name="location" size={14} color="#10B981" />
-                </View>
+          <Text style={styles.listTitle}>Active Drivers</Text>
+          {locations.map((location) => (
+            <View key={location.driver_id} style={styles.driverCard}>
+              <View style={styles.driverIcon}>
+                <Ionicons name="person" size={20} color="#3B82F6" />
               </View>
-            ))}
-          </ScrollView>
-        </View>
+              <View style={styles.driverInfo}>
+                <Text style={styles.driverName}>{location.driver_name}</Text>
+                <Text style={styles.driverTime}>
+                  Updated {format(new Date(location.timestamp), 'MMM d, h:mm a')}
+                </Text>
+                <Text style={styles.coordinates}>
+                  {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                </Text>
+              </View>
+              <View style={styles.locationBadge}>
+                <Ionicons name="location" size={14} color="#10B981" />
+              </View>
+            </View>
+          ))}
+        </ScrollView>
       )}
     </SafeAreaView>
   );
@@ -214,41 +164,30 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  mapContainer: {
-    flex: 1,
-  },
-  map: {
-    height: '50%',
-  },
-  markerContainer: {
-    alignItems: 'center',
-  },
-  marker: {
-    backgroundColor: '#3B82F6',
-    padding: 8,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  markerPointer: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#3B82F6',
-    marginTop: -2,
-  },
-  driverList: {
+  content: {
     flex: 1,
     padding: 16,
+  },
+  webMapPlaceholder: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 16,
+    padding: 40,
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: '#3B82F6',
+    borderStyle: 'dashed',
+  },
+  webMapText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#3B82F6',
+    marginTop: 12,
+  },
+  webMapSubtext: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 4,
   },
   listTitle: {
     fontSize: 16,
@@ -284,6 +223,11 @@ const styles = StyleSheet.create({
   driverTime: {
     fontSize: 12,
     color: '#6B7280',
+    marginTop: 2,
+  },
+  coordinates: {
+    fontSize: 11,
+    color: '#9CA3AF',
     marginTop: 2,
   },
   locationBadge: {

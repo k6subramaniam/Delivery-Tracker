@@ -10,6 +10,7 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -93,6 +94,26 @@ export default function SettingsScreen() {
     } catch (error) {
       console.error('Error updating location:', error);
       setLocationStatus('error');
+      // Fallback for web if expo-location fails (e.g. in some preview environments)
+      if (Platform.OS === 'web' && navigator.geolocation) {
+         navigator.geolocation.getCurrentPosition(
+           async (position) => {
+             try {
+               await locationAPI.update({
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+               });
+               setLocationStatus('shared (web)');
+             } catch (e) {
+               setLocationStatus('api error');
+             }
+           },
+           (err) => {
+             console.log("Web geolocation error", err);
+             setLocationStatus('denied/error');
+           }
+         );
+      }
     }
   };
 

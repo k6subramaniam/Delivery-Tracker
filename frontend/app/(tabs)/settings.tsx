@@ -247,11 +247,18 @@ export default function SettingsScreen() {
     ]);
   };
 
-  const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: logout },
-    ]);
+  const handleLogout = async () => {
+    if (Platform.OS === 'web') {
+      const confirm = window.confirm('Are you sure you want to logout?');
+      if (confirm) {
+        await logout();
+      }
+    } else {
+      Alert.alert('Logout', 'Are you sure you want to logout?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: logout },
+      ]);
+    }
   };
 
   return (

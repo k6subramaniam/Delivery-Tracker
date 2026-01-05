@@ -44,26 +44,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-      {isAdmin && (
-        <Tabs.Screen
-          name="map"
-          options={{
-            title: 'Map',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="map" size={size} color={color} />
-            ),
-          }}
-        />
-      )}
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
-          ),
-        }}
-      />
       <Tabs.Screen
         name="map"
         options={{
@@ -71,6 +51,15 @@ export default function TabsLayout() {
           title: 'Map',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="map" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" size={size} color={color} />
           ),
         }}
       />

@@ -35,6 +35,7 @@ export default function TasksScreen() {
   const [filter, setFilter] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form state
   const [title, setTitle] = useState('');
@@ -157,6 +158,17 @@ export default function TasksScreen() {
     { key: 'completed', label: 'Completed' },
   ];
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const visibleTasks = tasks.filter(task => {
+    if (!normalizedQuery) {
+      return true;
+    }
+    return (
+      task.title.toLowerCase().includes(normalizedQuery) ||
+      (task.description?.toLowerCase().includes(normalizedQuery) ?? false)
+    );
+  });
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -203,6 +215,35 @@ export default function TasksScreen() {
         ))}
       </ScrollView>
 
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={18} color="#9CA3AF" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search tasks"
+          placeholderTextColor="#9CA3AF"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.resultsRow}>
+        <Text style={styles.resultsText}>
+          Showing {visibleTasks.length} {visibleTasks.length === 1 ? 'task' : 'tasks'}
+        </Text>
+        {normalizedQuery.length > 0 && (
+          <View style={styles.searchTag}>
+            <Ionicons name="filter" size={12} color="#3B82F6" />
+            <Text style={styles.searchTagText}>Filtered</Text>
+          </View>
+        )}
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -210,14 +251,20 @@ export default function TasksScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {tasks.length === 0 ? (
+        {visibleTasks.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="clipboard-outline" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyTitle}>No tasks found</Text>
-            <Text style={styles.emptySubtitle}>Tap + to create a new task</Text>
+            <Text style={styles.emptyTitle}>
+              {tasks.length === 0 ? 'No tasks found' : 'No matches'}
+            </Text>
+            <Text style={styles.emptySubtitle}>
+              {tasks.length === 0
+                ? 'Tap + to create a new task'
+                : 'Try a different search term or filter'}
+            </Text>
           </View>
         ) : (
-          tasks.map(task => (
+          visibleTasks.map(task => (
             <TaskCard
               key={task.id}
               task={task}
@@ -458,6 +505,49 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: '#FFFFFF',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1F2937',
+  },
+  resultsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  resultsText: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  searchTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  searchTagText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#3B82F6',
   },
   content: {
     padding: 16,

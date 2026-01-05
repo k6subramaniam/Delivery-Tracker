@@ -31,9 +31,14 @@ const getStatusIcon = (status: string) => {
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, category, priority, onPress, onComplete, onDelete }) => {
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
+  const statusColor = isOverdue ? '#EF4444' : getStatusColor(task.status);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.card, { borderLeftColor: statusColor }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.header}>
         <View style={styles.leftSection}>
           {onComplete && task.status !== 'completed' && (
@@ -77,9 +82,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, category, priority, on
               <Text style={[styles.tagText, { color: priority.color }]}>{priority.name}</Text>
             </View>
           )}
-          <View style={[styles.tag, { backgroundColor: getStatusColor(task.status) + '20' }]}>
-            <Ionicons name={getStatusIcon(task.status) as any} size={12} color={getStatusColor(task.status)} />
-            <Text style={[styles.tagText, { color: getStatusColor(task.status), marginLeft: 4 }]}>
+          <View style={[styles.tag, { backgroundColor: statusColor + '20' }]}>
+            <Ionicons name={getStatusIcon(task.status) as any} size={12} color={statusColor} />
+            <Text style={[styles.tagText, { color: statusColor, marginLeft: 4 }]}>
               {task.status.replace('-', ' ')}
             </Text>
           </View>
@@ -109,6 +114,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,

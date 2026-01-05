@@ -10,6 +10,7 @@ interface TaskCardProps {
   priority?: Priority;
   onPress: () => void;
   onComplete?: () => void;
+  onDelete?: () => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -28,7 +29,7 @@ const getStatusIcon = (status: string) => {
   }
 };
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, category, priority, onPress, onComplete }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, category, priority, onPress, onComplete, onDelete }) => {
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
 
   return (
@@ -52,8 +53,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, category, priority, on
             ) : null}
           </View>
         </View>
-        <View style={styles.amountContainer}>
-          <Text style={styles.amount}>${task.amount.toFixed(2)}</Text>
+        <View style={styles.rightSection}>
+          <View style={styles.amountContainer}>
+            <Text style={styles.amount}>${task.amount.toFixed(2)}</Text>
+          </View>
+          {onDelete && (
+            <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
+              <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -118,9 +126,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   completeButton: {
     marginRight: 12,
     padding: 2,
+  },
+  deleteButton: {
+    padding: 6,
+    backgroundColor: '#FEE2E2',
+    borderRadius: 8,
   },
   titleContainer: {
     flex: 1,

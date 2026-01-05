@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
   Modal,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,8 +19,7 @@ import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/se
 import { TaskCard } from '../../src/components/TaskCard';
 import { Task, Category, Priority, User } from '../../src/types';
 import { useRouter } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Platform } from 'react-native';
+import { WebDatePicker } from '../../src/components/WebDatePicker';
 
 export default function TasksScreen() {
   const { user } = useAuth();
@@ -44,7 +44,6 @@ export default function TasksScreen() {
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const loadData = async () => {
     try {
@@ -86,6 +85,25 @@ export default function TasksScreen() {
     } catch (error) {
       console.error('Error completing task:', error);
     }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await tasksAPI.delete(taskId);
+            loadData();
+          } catch (error) {
+            console.error('Error deleting task:', error);
+            Alert.alert('Error', 'Failed to delete task');
+          }
+        },
+      },
+    ]);
   };
 
   const resetForm = () => {
@@ -207,6 +225,7 @@ export default function TasksScreen() {
               priority={getPriority(task.priority_id)}
               onPress={() => router.push(`/task/${task.id}`)}
               onComplete={() => handleCompleteTask(task.id)}
+              onDelete={() => handleDeleteTask(task.id)}
             />
           ))
         )}
@@ -370,27 +389,11 @@ export default function TasksScreen() {
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Due Date</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-                <Text style={styles.dateText}>
-                  {dueDate ? dueDate.toLocaleDateString() : 'Select date'}
-                </Text>
-              </TouchableOpacity>
-              {showDatePicker && (
-                <DateTimePicker
-                  value={dueDate || new Date()}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={(event, date) => {
-                    setShowDatePicker(Platform.OS === 'ios');
-                    if (date) setDueDate(date);
-                  }}
-                  minimumDate={new Date()}
-                />
-              )}
+              <WebDatePicker
+                value={dueDate}
+                onChange={setDueDate}
+                placeholder="Select due date"
+              />
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -544,20 +547,5 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     fontWeight: '500',
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 10,
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#6B7280',
   },
 });

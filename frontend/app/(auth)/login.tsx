@@ -17,12 +17,15 @@ import { useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 
+import { useTheme } from '../../src/context/ThemeContext';
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { colors, theme } = useTheme();
   const router = useRouter();
 
   const handleLogin = async () => {
@@ -43,7 +46,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -51,20 +54,20 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <Ionicons name="bus" size={48} color="#EF6A46" />
+              <Ionicons name="bus" size={48} color={colors.primary} />
             </View>
-            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={[styles.title, { color: colors.headerText }]}>Welcome Back</Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="mail-outline" size={20} color="#F97316" style={styles.inputIcon} />
+              <Text style={[styles.label, { color: colors.text }]}>Email</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                <Ionicons name="mail-outline" size={20} color={colors.primary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.text }]}
                   placeholder="Enter your email"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.textSecondary}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -74,13 +77,13 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#F97316" style={styles.inputIcon} />
+              <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                <Ionicons name="lock-closed-outline" size={20} color={colors.primary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.text }]}
                   placeholder="Enter your password"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.textSecondary}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -88,18 +91,19 @@ export default function LoginScreen() {
                   returnKeyType="go"
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
+                  <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
             </View>
 
             <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              <Text style={[styles.forgotPasswordText, { color: colors.warning }]}>Forgot Password?</Text>
             </TouchableOpacity>
 
             <Pressable
               style={({ pressed }) => [
                 styles.button,
+                { backgroundColor: colors.primary, shadowColor: colors.primary },
                 loading && styles.buttonDisabled,
                 pressed && { opacity: 0.9 },
               ]}
@@ -114,25 +118,25 @@ export default function LoginScreen() {
             </Pressable>
 
             <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>or continue with</Text>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <Text style={[styles.dividerText, { color: colors.textSecondary }]}>or continue with</Text>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
             </View>
 
             <View style={styles.socialButtons}>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="logo-google" size={24} color="#EA4335" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <Ionicons name="logo-apple" size={24} color="#000000" />
+              <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="logo-apple" size={24} color={theme === 'dark' ? '#FFFFFF' : '#000000'} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
+              <Text style={[styles.registerText, { color: colors.textSecondary }]}>Don't have an account? </Text>
               <Link href="/(auth)/register" asChild>
                 <TouchableOpacity>
-                  <Text style={styles.registerLink}>Sign Up</Text>
+                  <Text style={[styles.registerLink, { color: colors.primary }]}>Sign Up</Text>
                 </TouchableOpacity>
               </Link>
             </View>
@@ -146,7 +150,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF9F0', // Creamy background
   },
   keyboardView: {
     flex: 1,
@@ -166,7 +169,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1F2937',
     marginBottom: 8,
   },
   form: {
@@ -178,17 +180,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
     marginLeft: 4,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     height: 56,
   },
   inputIcon: {
@@ -197,25 +196,21 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#1F2937',
     height: '100%',
   },
   forgotPassword: {
     alignSelf: 'flex-end',
   },
   forgotPasswordText: {
-    color: '#D97706', // Muted orange/brown
     fontSize: 14,
     fontWeight: '500',
   },
   button: {
-    backgroundColor: '#EF6A46', // Vibrant orange
-    borderRadius: 28, // Fully rounded
+    borderRadius: 28,
     height: 56,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
-    shadowColor: '#EF6A46',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -237,11 +232,9 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
   },
   dividerText: {
     marginHorizontal: 16,
-    color: '#6B7280',
     fontSize: 14,
   },
   socialButtons: {
@@ -254,22 +247,18 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   registerContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
   },
   registerText: {
-    color: '#6B7280',
     fontSize: 14,
   },
   registerLink: {
-    color: '#EF6A46',
     fontSize: 14,
     fontWeight: '700',
   },

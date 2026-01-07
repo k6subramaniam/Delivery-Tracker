@@ -19,6 +19,8 @@ import { DashboardStats, Task, Category, Priority } from '../../src/types';
 import { categoriesAPI, prioritiesAPI } from '../../src/services/api';
 import { useRouter } from 'expo-router';
 
+import { useTheme } from '../../src/context/ThemeContext';
+
 // Define type for driver earnings
 interface DriverEarnings {
   driver_id: string;
@@ -31,6 +33,7 @@ interface DriverEarnings {
 
 export default function DashboardScreen() {
   const { user } = useAuth();
+  const { colors, theme } = useTheme();
   const router = useRouter();
   const isAdmin = user?.role === 'admin';
   const isDriver = user?.role === 'driver';
@@ -120,44 +123,44 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#EF6A46" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.tint} />
         }
         showsVerticalScrollIndicator={false}
       >
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.headerProfile}>
-            <View style={styles.avatarContainer}>
+            <View style={[styles.avatarContainer, { borderColor: colors.card }]}>
               <Image 
                 source={{ uri: 'https://i.pravatar.cc/150?img=12' }} // Placeholder avatar
                 style={styles.avatar} 
               />
             </View>
             <View>
-              <Text style={styles.greeting}>
+              <Text style={[styles.greeting, { color: colors.textSecondary }]}>
                 {isAdmin ? 'Good Morning,' : 'Hello,'}
               </Text>
-              <Text style={styles.userName}>{isAdmin ? 'Admin' : user?.name || 'Driver'}</Text>
+              <Text style={[styles.userName, { color: colors.headerText }]}>{isAdmin ? 'Admin' : user?.name || 'Driver'}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color="#EF6A46" />
-            <View style={styles.notificationBadge} />
+          <TouchableOpacity style={[styles.notificationButton, { backgroundColor: colors.card, shadowColor: theme === 'dark' ? '#000' : '#000' }]}>
+            <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+            <View style={[styles.notificationBadge, { backgroundColor: colors.primary, borderColor: colors.card }]} />
           </TouchableOpacity>
         </View>
 
         {/* Dashboard Cards Grid */}
         <View style={styles.statsGrid}>
           {/* Main Large Card */}
-          <View style={[styles.mainCard, { backgroundColor: '#FFF' }]}>
-            <View style={styles.mainCardDecorator} />
-            <Text style={styles.mainCardTitle}>{isAdmin ? 'Total Tasks' : "Today's Tasks"}</Text>
-            <Text style={styles.mainCardValue}>{stats?.total_tasks || 0}</Text>
-            <Text style={styles.mainCardSubtitle}>
+          <View style={[styles.mainCard, { backgroundColor: colors.card, shadowColor: colors.primary }]}>
+            <View style={[styles.mainCardDecorator, { backgroundColor: colors.primary }]} />
+            <Text style={[styles.mainCardTitle, { color: colors.textSecondary }]}>{isAdmin ? 'Total Tasks' : "Today's Tasks"}</Text>
+            <Text style={[styles.mainCardValue, { color: colors.primary }]}>{stats?.total_tasks || 0}</Text>
+            <Text style={[styles.mainCardSubtitle, { color: colors.textSecondary }]}>
               {isAdmin ? 'Tasks delivered today' : 'Tasks for today'}
             </Text>
           </View>
@@ -165,68 +168,97 @@ export default function DashboardScreen() {
           {/* Row of Small Cards */}
           <View style={styles.statsRow}>
             {/* Earnings Card (Small) */}
-            <View style={[styles.smallCard, { flex: 1 }]}>
-              <View style={[styles.smallCardIndicator, { backgroundColor: '#EF6A46' }]} />
-              <Text style={styles.smallCardTitle}>Earnings</Text>
-              <Text style={[styles.smallCardValue, { color: '#EF6A46' }]}>
+            <View style={[styles.smallCard, { flex: 1, backgroundColor: colors.card }]}>
+              <View style={[styles.smallCardIndicator, { backgroundColor: colors.primary }]} />
+              <Text style={[styles.smallCardTitle, { color: colors.textSecondary }]}>Earnings</Text>
+              <Text style={[styles.smallCardValue, { color: colors.primary }]}>
                 {isDriver ? (stats?.total_tasks || 0) * 10 : (stats?.pending_tasks || 0)} 
-                {/* Fallback logic for demo visual matching if needed, using real data primarily */}
               </Text>
-              <View style={[styles.iconCircle, { backgroundColor: '#FFE4DB' }]}>
-                <Ionicons name="trending-up" size={16} color="#EF6A46" />
+              <View style={[styles.iconCircle, { backgroundColor: theme === 'dark' ? '#333' : '#FFE4DB' }]}>
+                <Ionicons name="trending-up" size={16} color={colors.primary} />
               </View>
             </View>
 
             {/* Pending Card (Small) */}
-            <View style={[styles.smallCard, { flex: 1, marginHorizontal: 12 }]}>
+            <View style={[styles.smallCard, { flex: 1, marginHorizontal: 12, backgroundColor: colors.card }]}>
               <View style={[styles.smallCardIndicator, { backgroundColor: '#F59E0B' }]} />
-              <Text style={styles.smallCardTitle}>Pending</Text>
-              <Text style={styles.smallCardValue}>{stats?.pending_tasks || 0}</Text>
-              <View style={[styles.iconCircle, { backgroundColor: '#FEF3C7' }]}>
+              <Text style={[styles.smallCardTitle, { color: colors.textSecondary }]}>Pending</Text>
+              <Text style={[styles.smallCardValue, { color: colors.text }]}>{stats?.pending_tasks || 0}</Text>
+              <View style={[styles.iconCircle, { backgroundColor: theme === 'dark' ? '#333' : '#FEF3C7' }]}>
                 <Ionicons name="time-outline" size={16} color="#F59E0B" />
               </View>
             </View>
 
             {/* Completed Card (Small) */}
-            <View style={[styles.smallCard, { flex: 1 }]}>
+            <View style={[styles.smallCard, { flex: 1, backgroundColor: colors.card }]}>
               <View style={[styles.smallCardIndicator, { backgroundColor: '#10B981' }]} />
-              <Text style={styles.smallCardTitle}>Completed</Text>
-              <Text style={styles.smallCardValue}>{stats?.completed_tasks || 0}</Text>
-              <View style={[styles.iconCircle, { backgroundColor: '#D1FAE5' }]}>
+              <Text style={[styles.smallCardTitle, { color: colors.textSecondary }]}>Completed</Text>
+              <Text style={[styles.smallCardValue, { color: colors.text }]}>{stats?.completed_tasks || 0}</Text>
+              <View style={[styles.iconCircle, { backgroundColor: theme === 'dark' ? '#333' : '#D1FAE5' }]}>
                 <Ionicons name="checkmark-circle-outline" size={16} color="#10B981" />
               </View>
             </View>
           </View>
 
           {/* Large Earnings Graph Card */}
-          <View style={styles.earningsCard}>
-            <Text style={styles.earningsCardTitle}>Earnings</Text>
+          <View style={[styles.earningsCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.earningsCardTitle, { color: colors.text }]}>Earnings</Text>
             <View style={styles.earningsRow}>
-              <Text style={styles.earningsAmount}>${(stats?.total_earnings || 0).toFixed(2)}</Text>
-              <Ionicons name="trending-up" size={24} color="#EF6A46" style={{ marginBottom: 4 }} />
+              <Text style={[styles.earningsAmount, { color: colors.primary }]}>${(stats?.total_earnings || 0).toFixed(2)}</Text>
+              <Ionicons name="trending-up" size={24} color={colors.primary} style={{ marginBottom: 4 }} />
             </View>
-            <Text style={styles.earningsSubtitle}>
+            <Text style={[styles.earningsSubtitle, { color: colors.textSecondary }]}>
               Total Earnings {isAdmin ? 'this month' : 'today'}
             </Text>
             
             {/* Visual Wave Line (Mock) */}
             <View style={styles.waveContainer}>
-               {/* Simplified wave visual using borders/radius or svg if available, using simple view stack for now */}
-               <View style={styles.waveLine} />
-               <View style={[styles.waveLine, { top: 10, opacity: 0.5 }]} />
+               <View style={[styles.waveLine, { borderColor: colors.primary }]} />
+               <View style={[styles.waveLine, { top: 10, opacity: 0.5, borderColor: colors.primary }]} />
             </View>
           </View>
         </View>
 
+        {/* Admin "Active Drivers" Section */}
+        {isAdmin && (
+          <View style={styles.recentSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Active Drivers</Text>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/map')}>
+                <Text style={[styles.viewAllText, { color: colors.primary }]}>View Map</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* We can re-use driverEarnings list for now as "Active" typically means earning/working, 
+                or if we had a separate online status we'd use that. The prompt implies visibility is key.
+                Let's show a horizontal list of driver avatars or simple status cards. */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap: 12}}>
+               {driverEarnings.length === 0 ? (
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No active drivers</Text>
+               ) : (
+                 driverEarnings.map(d => (
+                   <View key={d.driver_id} style={[styles.activeDriverCard, { backgroundColor: colors.card }]}>
+                      <View style={[styles.activeDriverAvatar, { backgroundColor: colors.primary }]}>
+                        <Text style={styles.activeDriverInitials}>{d.driver_name.charAt(0)}</Text>
+                      </View>
+                      <Text style={[styles.activeDriverName, { color: colors.text }]} numberOfLines={1}>{d.driver_name}</Text>
+                      <Text style={[styles.activeDriverStatus, { color: colors.textSecondary }]}>Online</Text>
+                   </View>
+                 ))
+               )}
+            </ScrollView>
+          </View>
+        )}
+
         {/* List Section */}
         <View style={styles.recentSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               {isAdmin ? 'Drivers Activity & Payments' : 'Recent Tasks'}
             </Text>
             {isDriver && (
               <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/tasks' })}>
-                <Text style={styles.viewAllText}>View All</Text>
+                <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -234,26 +266,26 @@ export default function DashboardScreen() {
           {isAdmin ? (
             // Admin View: List of Drivers
             driverEarnings.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="people-outline" size={48} color="#D1D5DB" />
-                <Text style={styles.emptyText}>No driver activity yet</Text>
+              <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="people-outline" size={48} color={colors.textSecondary} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No driver activity yet</Text>
               </View>
             ) : (
               driverEarnings.map(earning => (
-                <View key={earning.driver_id} style={styles.earningCard}>
+                <View key={earning.driver_id} style={[styles.earningCard, { backgroundColor: colors.card }]}>
                   <View style={styles.earningInfo}>
-                    <View style={styles.earningIcon}>
-                      <Ionicons name="person" size={20} color="#EF6A46" />
+                    <View style={[styles.earningIcon, { backgroundColor: theme === 'dark' ? '#333' : '#FFF7ED' }]}>
+                      <Ionicons name="person" size={20} color={colors.primary} />
                     </View>
                     <View>
-                      <Text style={styles.earningName}>{earning.driver_name}</Text>
-                      <Text style={styles.earningSubtext}>
+                      <Text style={[styles.earningName, { color: colors.text }]}>{earning.driver_name}</Text>
+                      <Text style={[styles.earningSubtext, { color: colors.textSecondary }]}>
                         {earning.task_count} completed • {earning.pending_count} pending
                       </Text>
                     </View>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.earningAmount}>${earning.total_earnings.toFixed(2)}</Text>
+                    <Text style={[styles.earningAmount, { color: colors.text }]}>${earning.total_earnings.toFixed(2)}</Text>
                     {earning.pending_amount > 0 && (
                       <Text style={[styles.earningSubtext, { color: '#F59E0B' }]}>
                         +${earning.pending_amount.toFixed(2)} pending
@@ -266,9 +298,9 @@ export default function DashboardScreen() {
           ) : (
             // Driver View: List of Tasks
             recentTasks.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="clipboard-outline" size={48} color="#D1D5DB" />
-                <Text style={styles.emptyText}>No tasks yet</Text>
+              <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="clipboard-outline" size={48} color={colors.textSecondary} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No tasks yet</Text>
               </View>
             ) : (
               recentTasks.map(task => (
@@ -290,15 +322,16 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ... keep structure but remove hardcoded colors in component if possible, 
+  // but for styles.create we usually keep layout. 
+  // We'll update inline styles for colors.
   container: {
     flex: 1,
-    backgroundColor: '#FFF9F0', // Creamy background
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF9F0',
   },
   content: {
     padding: 20,
@@ -322,7 +355,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
     overflow: 'hidden',
   },
   avatar: {
@@ -331,22 +363,18 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 14,
-    color: '#6B7280',
     fontWeight: '500',
   },
   userName: {
     fontSize: 20,
-    fontWeight: '800', // Heavy bold
-    color: '#1F2937', // Dark text
+    fontWeight: '800',
   },
   notificationButton: {
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -359,9 +387,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#EF6A46',
     borderWidth: 1,
-    borderColor: '#FFFFFF',
   },
   statsGrid: {
     gap: 16,
@@ -370,7 +396,6 @@ const styles = StyleSheet.create({
   mainCard: {
     padding: 24,
     borderRadius: 20,
-    shadowColor: '#EF6A46',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
@@ -387,32 +412,27 @@ const styles = StyleSheet.create({
     top: 20,
     bottom: 20,
     width: 6,
-    backgroundColor: '#EF6A46',
     borderTopRightRadius: 6,
     borderBottomRightRadius: 6,
   },
   mainCardTitle: {
     fontSize: 16,
-    color: '#4B5563',
     fontWeight: '600',
     marginBottom: 4,
   },
   mainCardValue: {
     fontSize: 48,
     fontWeight: '800',
-    color: '#EF6A46',
     lineHeight: 56,
   },
   mainCardSubtitle: {
     fontSize: 14,
-    color: '#6B7280',
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   smallCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
@@ -436,14 +456,12 @@ const styles = StyleSheet.create({
   },
   smallCardTitle: {
     fontSize: 13,
-    color: '#4B5563',
     fontWeight: '600',
     marginLeft: 8,
   },
   smallCardValue: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#1F2937',
     marginLeft: 8,
   },
   iconCircle: {
@@ -456,7 +474,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   earningsCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 24,
     shadowColor: '#000',
@@ -469,7 +486,6 @@ const styles = StyleSheet.create({
   earningsCardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 8,
   },
   earningsRow: {
@@ -480,11 +496,9 @@ const styles = StyleSheet.create({
   earningsAmount: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#EF6A46',
   },
   earningsSubtitle: {
     fontSize: 14,
-    color: '#9CA3AF',
     marginTop: 4,
   },
   waveContainer: {
@@ -498,7 +512,6 @@ const styles = StyleSheet.create({
     right: -20,
     height: 60,
     borderTopWidth: 2,
-    borderColor: '#EF6A46',
     borderRadius: 100,
     transform: [{ scaleX: 1.5 }],
     opacity: 0.3,
@@ -515,31 +528,25 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1F2937',
   },
   viewAllText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#EF6A46',
   },
   emptyState: {
     alignItems: 'center',
     padding: 40,
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
   },
   emptyText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#9CA3AF',
   },
   earningCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
@@ -558,7 +565,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFF7ED',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -566,16 +572,47 @@ const styles = StyleSheet.create({
   earningName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1F2937',
   },
   earningSubtext: {
     fontSize: 13,
-    color: '#6B7280',
     marginTop: 2,
   },
   earningAmount: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#10B981',
+  },
+  
+  // New Active Driver Card
+  activeDriverCard: {
+    padding: 12,
+    borderRadius: 16,
+    alignItems: 'center',
+    minWidth: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  activeDriverAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  activeDriverInitials: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  activeDriverName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  activeDriverStatus: {
+    fontSize: 12,
   },
 });

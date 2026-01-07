@@ -92,15 +92,7 @@ export default function MapScreen() {
             </View>
             
             {/* Store markers (Static for visual) */}
-            <View style={[styles.storeMarker, { top: '20%', left: '20%' }]}>
-              <Ionicons name="storefront" size={16} color="#FFFFFF" />
-            </View>
-            <View style={[styles.storeMarker, { top: '35%', right: '15%' }]}>
-              <Ionicons name="storefront" size={16} color="#FFFFFF" />
-            </View>
-            <View style={[styles.storeMarker, { bottom: '30%', left: '10%' }]}>
-              <Ionicons name="storefront" size={16} color="#FFFFFF" />
-            </View>
+            {/* REMOVED as requested */}
 
             {/* Driver markers positioned randomly for visual */}
             {locations.length > 0 ? (
@@ -120,15 +112,7 @@ export default function MapScreen() {
                   </TouchableOpacity>
                 );
               })
-            ) : (
-              // Demo marker if no drivers
-              <View style={[styles.mapMarker, { left: '50%', top: '50%' }]}>
-                <View style={styles.markerPulse} />
-                <View style={styles.markerDot}>
-                  <Ionicons name="bus" size={16} color="#FFFFFF" />
-                </View>
-              </View>
-            )}
+            ) : null }
           </View>
         </View>
 

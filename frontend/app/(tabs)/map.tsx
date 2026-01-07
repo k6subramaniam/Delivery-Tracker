@@ -8,9 +8,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
-  TextInput,
   Platform,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +19,53 @@ import { DriverLocation } from '../../src/types';
 import { format } from 'date-fns';
 
 import { useTheme } from '../../src/context/ThemeContext';
+
+// Helper component to resolve and display address
+const AddressDisplay = ({ lat, lng }: { lat: number; lng: number }) => {
+  const [address, setAddress] = useState<string>(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+  const { colors } = useTheme();
+
+  useEffect(() => {
+    let isMounted = true;
+    const resolveAddress = async () => {
+      try {
+        if (Platform.OS === 'web') {
+          // Use Nominatim for web
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+            { headers: { 'User-Agent': 'DeliveryTrackerApp/1.0' } }
+          );
+          const data = await response.json();
+          if (isMounted && data.address) {
+            const road = data.address.road || '';
+            const number = data.address.house_number || '';
+            const city = data.address.city || data.address.town || data.address.village || '';
+            const formatted = `${number} ${road}, ${city}`.trim().replace(/^,/, '').trim();
+            if (formatted) setAddress(formatted);
+          }
+        } else {
+          // Use native geocoder
+          const [result] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+          if (isMounted && result) {
+            const formatted = `${result.streetNumber || ''} ${result.street || ''}, ${result.city || ''}`.trim();
+            if (formatted) setAddress(formatted);
+          }
+        }
+      } catch (e) {
+        // Fallback to coordinates on error
+      }
+    };
+
+    resolveAddress();
+    return () => { isMounted = false; };
+  }, [lat, lng]);
+
+  return (
+    <Text style={[styles.addressText, { color: colors.textSecondary }]}>
+      {address}
+    </Text>
+  );
+};
 
 export default function MapScreen() {
   const [locations, setLocations] = useState<DriverLocation[]>([]);
@@ -151,9 +198,7 @@ export default function MapScreen() {
                     <Text style={[styles.taskTitle, { color: colors.primary }]}>Package Delivery</Text>
                     <Text style={[styles.driverName, { color: colors.text }]}>{location.driver_name}</Text>
                   </View>
-                  <Text style={[styles.addressText, { color: colors.textSecondary }]}>
-                    {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-                  </Text>
+                  <AddressDisplay lat={location.latitude} lng={location.longitude} />
                   <View style={styles.cardFooter}>
                     <Text style={[styles.distanceText, { color: colors.text }]}>Active</Text>
                     <View style={[styles.statusBadge, { backgroundColor: theme === 'dark' ? '#442' : '#FEF3C7' }]}>

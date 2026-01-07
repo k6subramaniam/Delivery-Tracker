@@ -41,7 +41,8 @@ export default function SettingsScreen() {
   const [priorityColor, setPriorityColor] = useState('#EF4444');
   const [saving, setSaving] = useState(false);
 
-  const colors = ['#EF6A46', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#6B7280'];
+  // Renamed to avoid conflict with ThemeContext colors
+  const PICKER_COLORS = ['#EF6A46', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#6B7280'];
 
   useEffect(() => {
     loadData();
@@ -488,7 +489,7 @@ export default function SettingsScreen() {
             />
             <Text style={styles.label}>Color</Text>
             <View style={styles.colorGrid}>
-              {colors.map((color) => (
+              {PICKER_COLORS.map((color) => (
                 <TouchableOpacity
                   key={color}
                   style={[
@@ -556,7 +557,7 @@ export default function SettingsScreen() {
             />
             <Text style={styles.label}>Color</Text>
             <View style={styles.colorGrid}>
-              {colors.map((color) => (
+              {PICKER_COLORS.map((color) => (
                 <TouchableOpacity
                   key={color}
                   style={[

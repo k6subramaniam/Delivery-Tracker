@@ -104,17 +104,6 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* Floating Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={[styles.searchBar, { backgroundColor: colors.inputBg, shadowColor: theme === 'dark' ? 'transparent' : '#000' }]}>
-          <Text style={[styles.searchText, { color: colors.text }]}>Deliveries</Text>
-          <Ionicons name="search" size={24} color={colors.primary} />
-        </View>
-        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.card, shadowColor: theme === 'dark' ? 'transparent' : '#000' }]}>
-          <Ionicons name="filter" size={24} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -246,7 +235,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   mapBackground: {
-    height: 400,
+    aspectRatio: 1, // Make it a square
+    width: '100%',
     backgroundColor: '#E5E7EB', // Greyish map bg
     borderRadius: 0, // Full bleed visual simulation
     overflow: 'hidden',

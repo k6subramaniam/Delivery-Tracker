@@ -9,6 +9,7 @@ import {
   Platform,
   FlatList,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
@@ -17,7 +18,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 import { useAuth } from '../../src/context/AuthContext';
 import { messagesAPI } from '../../src/services/api';
 import { Message } from '../../src/types';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 
 export default function ChatScreen() {
   const { userId } = useLocalSearchParams();
@@ -70,27 +71,38 @@ export default function ChatScreen() {
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => {
+  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
     const isMe = item.sender_id === user?.id;
+    const showDate = index === 0 || !isSameDay(new Date(messages[index - 1].timestamp), new Date(item.timestamp));
+
     return (
-      <View style={[
-        styles.messageContainer,
-        isMe ? styles.myMessage : styles.theirMessage,
-        { backgroundColor: isMe ? colors.primary : (theme === 'dark' ? '#333' : '#E5E7EB') }
-      ]}>
-        <Text style={[
-          styles.messageText,
-          { color: isMe ? '#FFFFFF' : colors.text }
+      <>
+        {showDate && (
+          <View style={styles.dateSeparator}>
+            <Text style={[styles.dateSeparatorText, { color: colors.textSecondary }]}>
+              {format(new Date(item.timestamp), 'MMMM d, yyyy')}
+            </Text>
+          </View>
+        )}
+        <View style={[
+          styles.messageContainer,
+          isMe ? styles.myMessage : styles.theirMessage,
+          { backgroundColor: isMe ? colors.primary : (theme === 'dark' ? '#333' : '#E5E7EB') }
         ]}>
-          {item.content}
-        </Text>
-        <Text style={[
-          styles.timestamp,
-          { color: isMe ? 'rgba(255,255,255,0.7)' : colors.textSecondary }
-        ]}>
-          {format(new Date(item.timestamp), 'h:mm a')}
-        </Text>
-      </View>
+          <Text style={[
+            styles.messageText,
+            { color: isMe ? '#FFFFFF' : colors.text }
+          ]}>
+            {item.content}
+          </Text>
+          <Text style={[
+            styles.timestamp,
+            { color: isMe ? 'rgba(255,255,255,0.7)' : colors.textSecondary }
+          ]}>
+            {format(new Date(item.timestamp), 'h:mm a')}
+          </Text>
+        </View>
+      </>
     );
   };
 
@@ -102,7 +114,29 @@ export default function ChatScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Chat</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity onPress={() => {
+          Alert.alert(
+            'Clear Chat',
+            'Are you sure you want to delete all messages?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Clear',
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await messagesAPI.clearConversation(otherUserId as string);
+                    setMessages([]);
+                  } catch (error) {
+                    console.error('Failed to clear chat:', error);
+                  }
+                },
+              },
+            ]
+          );
+        }}>
+          <Ionicons name="trash-outline" size={24} color={colors.primary} />
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -199,6 +233,14 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 10,
     alignSelf: 'flex-end',
+  },
+  dateSeparator: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  dateSeparatorText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   inputContainer: {
     flexDirection: 'row',

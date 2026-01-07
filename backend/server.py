@@ -328,6 +328,17 @@ async def get_conversations(current_user: dict = Depends(get_current_user)):
 
 # ===================== ADMIN ROUTES =====================
 
+@api_router.delete("/messages/conversation/{other_user_id}")
+async def clear_conversation(other_user_id: str, current_user: dict = Depends(get_current_user)):
+    # Delete all messages between current user and other user
+    await db.messages.delete_many({
+        "$or": [
+            {"sender_id": current_user["id"], "receiver_id": other_user_id},
+            {"sender_id": other_user_id, "receiver_id": current_user["id"]}
+        ]
+    })
+    return {"message": "Conversation cleared"}
+
 @api_router.delete("/admin/reset-data")
 async def reset_data(current_user: dict = Depends(get_current_user)):
     # Delete all data from collections except users (or maybe completely wipe)

@@ -15,8 +15,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { dashboardAPI, tasksAPI } from '../../src/services/api';
 import { StatCard } from '../../src/components/StatCard';
 import { TaskCard } from '../../src/components/TaskCard';
-import { DashboardStats, Task, Category, Priority } from '../../src/types';
-import { categoriesAPI, prioritiesAPI } from '../../src/services/api';
+import { DashboardStats, Task } from '../../src/types';
 import { useRouter, useFocusEffect } from 'expo-router';
 
 import { useTheme } from '../../src/context/ThemeContext';
@@ -41,8 +40,6 @@ export default function DashboardScreen() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [driverEarnings, setDriverEarnings] = useState<DriverEarnings[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [priorities, setPriorities] = useState<Priority[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -50,8 +47,6 @@ export default function DashboardScreen() {
     try {
       const promises: Promise<any>[] = [
         dashboardAPI.getStats(),
-        categoriesAPI.getAll(),
-        prioritiesAPI.getAll(),
       ];
 
       // Different data fetching based on role
@@ -68,20 +63,15 @@ export default function DashboardScreen() {
       const results = await Promise.all(promises);
       
       const statsRes = results[0];
-      const catsRes = results[1];
-      const priosRes = results[2];
-      
       setStats(statsRes.data);
-      setCategories(catsRes.data);
-      setPriorities(priosRes.data);
 
       if (isAdmin) {
-        // results[3] is tasks, results[4] is driver earnings
-        setRecentTasks(results[3].data.slice(0, 5));
-        setDriverEarnings(results[4].data);
+        // results[1] is tasks, results[2] is driver earnings
+        setRecentTasks(results[1].data.slice(0, 5));
+        setDriverEarnings(results[2].data);
       } else {
         // Drivers: Fetch ALL tasks so they can see pending work too
-        const allTasks = results[3].data;
+        const allTasks = results[1].data;
         setRecentTasks(allTasks.slice(0, 5)); // Show recent 5 of ANY status
       }
 
@@ -115,8 +105,8 @@ export default function DashboardScreen() {
     }
   };
 
-  const getCategory = (id: string | null) => categories.find(c => c.id === id);
-  const getPriority = (id: string | null) => priorities.find(p => p.id === id);
+  const getCategory = (id: string | null) => null;
+  const getPriority = (id: string | null) => null;
 
   if (loading) {
     return (
@@ -295,6 +285,12 @@ export default function DashboardScreen() {
                         +${earning.pending_amount.toFixed(2)} pending
                       </Text>
                     )}
+                    <TouchableOpacity 
+                      onPress={() => router.push(`/chat/${earning.driver_id}`)}
+                      style={{ marginTop: 4, padding: 4 }}
+                    >
+                      <Ionicons name="chatbubble-outline" size={20} color={colors.primary} />
+                    </TouchableOpacity>
                   </View>
                 </View>
               ))
@@ -311,8 +307,6 @@ export default function DashboardScreen() {
                 <TaskCard
                   key={task.id}
                   task={task}
-                  category={getCategory(task.category_id)}
-                  priority={getPriority(task.priority_id)}
                   onPress={() => router.push(`/task/${task.id}`)}
                   onComplete={() => handleCompleteTask(task.id)}
                 />

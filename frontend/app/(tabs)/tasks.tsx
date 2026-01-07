@@ -15,10 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
-import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/services/api';
+import { tasksAPI, driversAPI } from '../../src/services/api';
 import { useTheme } from '../../src/context/ThemeContext';
 import { TaskCard } from '../../src/components/TaskCard';
-import { Task, Category, Priority, User } from '../../src/types';
+import { Task, User } from '../../src/types';
 
 export default function TasksScreen() {
   const { user } = useAuth();
@@ -29,8 +29,6 @@ export default function TasksScreen() {
   const isAdmin = user?.role === 'admin';
 
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [priorities, setPriorities] = useState<Priority[]>([]);
   const [drivers, setDrivers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,21 +48,13 @@ export default function TasksScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
       const statusFilter = filter === 'all' ? undefined : filter;
-      const [tasksRes, catsRes, priosRes] = await Promise.all([
-        tasksAPI.getAll({ status: statusFilter }),
-        categoriesAPI.getAll(),
-        prioritiesAPI.getAll(),
-      ]);
+      const tasksRes = await tasksAPI.getAll({ status: statusFilter });
       setTasks(tasksRes.data);
-      setCategories(catsRes.data);
-      setPriorities(priosRes.data);
 
       if (isAdmin) {
         const driversRes = await driversAPI.getAll();
@@ -123,8 +113,6 @@ export default function TasksScreen() {
     setTitle('');
     setDescription('');
     setAmount('');
-    setSelectedCategory(null);
-    setSelectedPriority(null);
     setSelectedDriver(null);
   };
 
@@ -144,8 +132,6 @@ export default function TasksScreen() {
         title: title.trim(),
         description: description.trim(),
         amount: parseFloat(amount),
-        category_id: selectedCategory,
-        priority_id: selectedPriority,
         assigned_driver_id: isAdmin ? selectedDriver : (user?.role === 'driver' ? user.id : null),
       });
       setShowAddModal(false);
@@ -158,8 +144,8 @@ export default function TasksScreen() {
     }
   };
 
-  const getCategory = (id: string | null) => categories.find(c => c.id === id);
-  const getPriority = (id: string | null) => priorities.find(p => p.id === id);
+  const getCategory = (id: string | null) => null;
+  const getPriority = (id: string | null) => null;
 
   const filterOptions = [
     { key: 'all', label: 'All' },
@@ -336,64 +322,6 @@ export default function TasksScreen() {
                   onChangeText={setAmount}
                   keyboardType="decimal-pad"
                 />
-              </View>
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Category</Text>
-              <View style={styles.pickerContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.optionsRow}>
-                    {categories.map(cat => (
-                      <TouchableOpacity
-                        key={cat.id}
-                        style={[
-                          styles.optionChip,
-                          selectedCategory === cat.id && styles.optionChipSelected,
-                          selectedCategory === cat.id && { backgroundColor: '#EF6A46', borderColor: '#EF6A46' }
-                        ]}
-                        onPress={() => setSelectedCategory(
-                          selectedCategory === cat.id ? null : cat.id
-                        )}
-                      >
-                        <Text
-                          style={[
-                            styles.optionText,
-                            selectedCategory === cat.id && styles.optionTextSelected
-                          ]}
-                        >
-                          {cat.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </ScrollView>
-              </View>
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Priority</Text>
-              <View style={styles.segmentedControl}>
-                {priorities.map((prio, index) => (
-                  <TouchableOpacity
-                    key={prio.id}
-                    style={[
-                      styles.segmentButton,
-                      selectedPriority === prio.id && styles.segmentButtonActive,
-                      selectedPriority === prio.id && { backgroundColor: prio.color + '20', borderColor: prio.color }
-                    ]}
-                    onPress={() => setSelectedPriority(prio.id)}
-                  >
-                    <Text
-                      style={[
-                        styles.segmentText,
-                        selectedPriority === prio.id && { color: prio.color, fontWeight: '700' }
-                      ]}
-                    >
-                      {prio.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
               </View>
             </View>
 

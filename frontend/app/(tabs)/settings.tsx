@@ -7,49 +7,25 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
-  TextInput,
-  Modal,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
-import { categoriesAPI, prioritiesAPI, locationAPI } from '../../src/services/api';
-import { Category, Priority } from '../../src/types';
+import { locationAPI, adminAPI } from '../../src/services/api';
 import * as Location from 'expo-location';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme, colors } = useTheme();
   const isDriver = user?.role === 'driver';
+  const isAdmin = user?.role === 'admin';
 
-
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [priorities, setPriorities] = useState<Priority[]>([]);
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [locationStatus, setLocationStatus] = useState<string>('disabled');
 
-  // Modal states
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showPriorityModal, setShowPriorityModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [editingPriority, setEditingPriority] = useState<Priority | null>(null);
-
-  // Form states
-  const [categoryName, setCategoryName] = useState('');
-  const [categoryColor, setCategoryColor] = useState('#EF6A46');
-  const [priorityName, setPriorityName] = useState('');
-  const [priorityLevel, setPriorityLevel] = useState('3');
-  const [priorityColor, setPriorityColor] = useState('#EF4444');
-  const [saving, setSaving] = useState(false);
-
-  // Renamed to avoid conflict with ThemeContext colors
-  const PICKER_COLORS = ['#EF6A46', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#6B7280'];
-
   useEffect(() => {
-    loadData();
     checkLocationPermission();
   }, []);
 
@@ -62,17 +38,26 @@ export default function SettingsScreen() {
     }
   }, [isDriver, locationEnabled]);
 
-  const loadData = async () => {
-    try {
-      const [catsRes, priosRes] = await Promise.all([
-        categoriesAPI.getAll(),
-        prioritiesAPI.getAll(),
-      ]);
-      setCategories(catsRes.data);
-      setPriorities(priosRes.data);
-    } catch (error) {
-      console.error('Error loading settings data:', error);
-    }
+  const resetAllData = async () => {
+    Alert.alert(
+      'Reset All Data',
+      'Are you sure you want to delete ALL data? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await adminAPI.resetData();
+              Alert.alert('Success', 'All data has been reset.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to reset data');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const checkLocationPermission = async () => {
@@ -162,136 +147,6 @@ export default function SettingsScreen() {
       console.error('Error updating location:', error);
       setLocationStatus('error');
     }
-  };
-
-  // Category handlers
-  const openCategoryModal = (category?: Category) => {
-    if (category) {
-      setEditingCategory(category);
-      setCategoryName(category.name);
-      setCategoryColor(category.color);
-    } else {
-      setEditingCategory(null);
-      setCategoryName('');
-      setCategoryColor('#EF6A46');
-    }
-    setShowCategoryModal(true);
-  };
-
-  const saveCategory = async () => {
-    if (!categoryName.trim()) {
-      Alert.alert('Error', 'Please enter a category name');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      if (editingCategory) {
-        await categoriesAPI.update(editingCategory.id, {
-          name: categoryName.trim(),
-          color: categoryColor,
-        });
-      } else {
-        await categoriesAPI.create({
-          name: categoryName.trim(),
-          color: categoryColor,
-        });
-      }
-      setShowCategoryModal(false);
-      loadData();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save category');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const deleteCategory = async (id: string) => {
-    Alert.alert('Delete Category', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await categoriesAPI.delete(id);
-            loadData();
-          } catch (error) {
-            Alert.alert('Error', 'Failed to delete category');
-          }
-        },
-      },
-    ]);
-  };
-
-  // Priority handlers
-  const openPriorityModal = (priority?: Priority) => {
-    if (priority) {
-      setEditingPriority(priority);
-      setPriorityName(priority.name);
-      setPriorityLevel(priority.level.toString());
-      setPriorityColor(priority.color);
-    } else {
-      setEditingPriority(null);
-      setPriorityName('');
-      setPriorityLevel('3');
-      setPriorityColor('#EF4444');
-    }
-    setShowPriorityModal(true);
-  };
-
-  const savePriority = async () => {
-    if (!priorityName.trim()) {
-      Alert.alert('Error', 'Please enter a priority name');
-      return;
-    }
-
-    const level = parseInt(priorityLevel);
-    if (isNaN(level) || level < 1 || level > 5) {
-      Alert.alert('Error', 'Priority level must be between 1 and 5');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      if (editingPriority) {
-        await prioritiesAPI.update(editingPriority.id, {
-          name: priorityName.trim(),
-          level,
-          color: priorityColor,
-        });
-      } else {
-        await prioritiesAPI.create({
-          name: priorityName.trim(),
-          level,
-          color: priorityColor,
-        });
-      }
-      setShowPriorityModal(false);
-      loadData();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save priority');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const deletePriority = async (id: string) => {
-    Alert.alert('Delete Priority', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await prioritiesAPI.delete(id);
-            loadData();
-          } catch (error) {
-            Alert.alert('Error', 'Failed to delete priority');
-          }
-        },
-      },
-    ]);
   };
 
   const handleLogout = async () => {
@@ -396,29 +251,18 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
           </TouchableOpacity>
 
-          {/* Categories & Priorities (Admin Tools moved here visually or kept?) 
-              Let's keep them as extra menu items for functionality but styled like the rest 
-          */}
-          
-          <View style={styles.menuDivider} />
-          
-          <TouchableOpacity style={styles.menuItem} onPress={() => openCategoryModal()}>
-            <View style={styles.menuIconContainer}>
-              <Ionicons name="pricetags-outline" size={20} color="#EF6A46" />
-            </View>
-            <Text style={styles.menuText}>Manage Categories</Text>
-            <Ionicons name="add-circle-outline" size={20} color="#EF6A46" />
-          </TouchableOpacity>
-
-          <View style={styles.menuDivider} />
-
-          <TouchableOpacity style={styles.menuItem} onPress={() => openPriorityModal()}>
-            <View style={styles.menuIconContainer}>
-              <Ionicons name="flag-outline" size={20} color="#EF6A46" />
-            </View>
-            <Text style={styles.menuText}>Manage Priorities</Text>
-            <Ionicons name="add-circle-outline" size={20} color="#EF6A46" />
-          </TouchableOpacity>
+          {isAdmin && (
+            <>
+              <View style={styles.menuDivider} />
+              <TouchableOpacity style={styles.menuItem} onPress={resetAllData}>
+                <View style={[styles.menuIconContainer, { backgroundColor: '#FEE2E2' }]}>
+                  <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                </View>
+                <Text style={[styles.menuText, { color: '#EF4444' }]}>Reset All Data</Text>
+                <Ionicons name="warning-outline" size={20} color="#EF4444" />
+              </TouchableOpacity>
+            </>
+          )}
 
           <View style={styles.logoutContainer}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -426,165 +270,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Existing Categories List (Hidden/Refactored or kept for management?)
-            Let's render them in a simple list below for management if needed, 
-            or assume the modal handles it. Let's keep a simplified list below. 
-        */}
-        {(categories.length > 0 || priorities.length > 0) && (
-          <View style={styles.configSection}>
-            <Text style={styles.configTitle}>Configuration Data</Text>
-            <View style={styles.configRow}>
-              <Text style={styles.configLabel}>Categories:</Text>
-              <View style={styles.configChips}>
-                {categories.map(c => (
-                  <TouchableOpacity key={c.id} style={[styles.miniChip, { backgroundColor: c.color }]} onPress={() => openCategoryModal(c)}>
-                    <Text style={styles.miniChipText}>{c.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            <View style={styles.configRow}>
-              <Text style={styles.configLabel}>Priorities:</Text>
-              <View style={styles.configChips}>
-                {priorities.map(p => (
-                  <TouchableOpacity key={p.id} style={[styles.miniChip, { backgroundColor: p.color }]} onPress={() => openPriorityModal(p)}>
-                    <Text style={styles.miniChipText}>{p.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
-
       </ScrollView>
-
-      {/* Category Modal */}
-      <Modal
-        visible={showCategoryModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowCategoryModal(false)}
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>
-              {editingCategory ? 'Edit Category' : 'New Category'}
-            </Text>
-            <TouchableOpacity onPress={saveCategory} disabled={saving}>
-              {saving ? (
-                <ActivityIndicator size="small" color="#EF6A46" />
-              ) : (
-                <Text style={styles.saveText}>Save</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-          <View style={styles.modalContent}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Category name"
-              placeholderTextColor="#9CA3AF"
-              value={categoryName}
-              onChangeText={setCategoryName}
-            />
-            <Text style={styles.label}>Color</Text>
-            <View style={styles.colorGrid}>
-              {PICKER_COLORS.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: color },
-                    categoryColor === color && styles.colorOptionSelected,
-                  ]}
-                  onPress={() => setCategoryColor(color)}
-                >
-                  {categoryColor === color && (
-                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-            {editingCategory && (
-              <TouchableOpacity style={styles.deleteButton} onPress={() => deleteCategory(editingCategory.id)}>
-                <Text style={styles.deleteButtonText}>Delete Category</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </SafeAreaView>
-      </Modal>
-
-      {/* Priority Modal */}
-      <Modal
-        visible={showPriorityModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowPriorityModal(false)}
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowPriorityModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>
-              {editingPriority ? 'Edit Priority' : 'New Priority'}
-            </Text>
-            <TouchableOpacity onPress={savePriority} disabled={saving}>
-              {saving ? (
-                <ActivityIndicator size="small" color="#EF6A46" />
-              ) : (
-                <Text style={styles.saveText}>Save</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-          <View style={styles.modalContent}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Priority name"
-              placeholderTextColor="#9CA3AF"
-              value={priorityName}
-              onChangeText={setPriorityName}
-            />
-            <Text style={styles.label}>Level (1-5)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="3"
-              placeholderTextColor="#9CA3AF"
-              value={priorityLevel}
-              onChangeText={setPriorityLevel}
-              keyboardType="number-pad"
-            />
-            <Text style={styles.label}>Color</Text>
-            <View style={styles.colorGrid}>
-              {PICKER_COLORS.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: color },
-                    priorityColor === color && styles.colorOptionSelected,
-                  ]}
-                  onPress={() => setPriorityColor(color)}
-                >
-                  {priorityColor === color && (
-                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-            {editingPriority && (
-              <TouchableOpacity style={styles.deleteButton} onPress={() => deletePriority(editingPriority.id)}>
-                <Text style={styles.deleteButtonText}>Delete Priority</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </SafeAreaView>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -703,121 +389,5 @@ const styles = StyleSheet.create({
     color: '#EF6A46',
     fontSize: 16,
     fontWeight: '700',
-  },
-  
-  // Config section (mini styling)
-  configSection: {
-    marginBottom: 20,
-  },
-  configTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#9CA3AF',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-  },
-  configRow: {
-    marginBottom: 12,
-  },
-  configLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
-    marginBottom: 8,
-  },
-  configChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  miniChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  miniChipText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  // Modal Styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#FFF9F0',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  saveText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#EF6A46',
-  },
-  modalContent: {
-    padding: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#1F2937',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  colorOption: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  colorOptionSelected: {
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  deleteButton: {
-    marginTop: 32,
-    backgroundColor: '#FEE2E2',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: '#EF4444',
-    fontWeight: '600',
-    fontSize: 16,
   },
 });

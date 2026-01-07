@@ -6,21 +6,13 @@ export interface User {
   created_at: string;
 }
 
-export interface Category {
+export interface Message {
   id: string;
-  name: string;
-  color: string;
-  created_by: string;
-  created_at: string;
-}
-
-export interface Priority {
-  id: string;
-  name: string;
-  level: number;
-  color: string;
-  created_by: string;
-  created_at: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  timestamp: string;
+  read: boolean;
 }
 
 export interface Task {
@@ -28,8 +20,6 @@ export interface Task {
   title: string;
   description: string;
   amount: number;
-  category_id: string | null;
-  priority_id: string | null;
   status: 'pending' | 'in-progress' | 'completed';
   due_date: string | null;
   assigned_driver_id: string | null;

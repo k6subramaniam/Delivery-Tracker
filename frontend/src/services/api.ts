@@ -30,7 +30,7 @@ export const authAPI = {
 
 // Tasks API
 export const tasksAPI = {
-  getAll: (params?: { status?: string; category_id?: string; priority_id?: string; assigned_driver_id?: string }) =>
+  getAll: (params?: { status?: string; assigned_driver_id?: string }) =>
     api.get('/tasks', { params }),
   getOne: (id: string) => api.get(`/tasks/${id}`),
   create: (data: any) => api.post('/tasks', data),
@@ -39,20 +39,15 @@ export const tasksAPI = {
   complete: (id: string) => api.put(`/tasks/${id}/complete`),
 };
 
-// Categories API
-export const categoriesAPI = {
-  getAll: () => api.get('/categories'),
-  create: (data: { name: string; color: string }) => api.post('/categories', data),
-  update: (id: string, data: { name: string; color: string }) => api.put(`/categories/${id}`, data),
-  delete: (id: string) => api.delete(`/categories/${id}`),
+// Messages API
+export const messagesAPI = {
+  send: (data: { receiver_id: string; content: string }) => api.post('/messages/send', data),
+  getConversation: (otherUserId: string) => api.get(`/messages/conversation/${otherUserId}`),
 };
 
-// Priorities API
-export const prioritiesAPI = {
-  getAll: () => api.get('/priorities'),
-  create: (data: { name: string; level: number; color: string }) => api.post('/priorities', data),
-  update: (id: string, data: { name: string; level: number; color: string }) => api.put(`/priorities/${id}`, data),
-  delete: (id: string) => api.delete(`/priorities/${id}`),
+// Admin API
+export const adminAPI = {
+  resetData: () => api.delete('/admin/reset-data'),
 };
 
 // Drivers API

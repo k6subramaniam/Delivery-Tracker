@@ -74,36 +74,14 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
-class CategoryCreate(BaseModel):
-    name: str
-    color: str = "#3B82F6"
-
-class CategoryResponse(BaseModel):
-    id: str
-    name: str
-    color: str
-    created_by: str
-    created_at: datetime
-
-class PriorityCreate(BaseModel):
-    name: str
-    level: int = Field(..., ge=1, le=5)
-    color: str = "#EF4444"
-
-class PriorityResponse(BaseModel):
-    id: str
-    name: str
-    level: int
-    color: str
-    created_by: str
-    created_at: datetime
+class LocationUpdate(BaseModel):
+    latitude: float
+    longitude: float
 
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = ""
     amount: float = Field(..., ge=0)
-    category_id: Optional[str] = None
-    priority_id: Optional[str] = None
     due_date: Optional[datetime] = None
     assigned_driver_id: Optional[str] = None
 
@@ -111,8 +89,6 @@ class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     amount: Optional[float] = None
-    category_id: Optional[str] = None
-    priority_id: Optional[str] = None
     status: Optional[str] = None
     due_date: Optional[datetime] = None
     assigned_driver_id: Optional[str] = None
@@ -122,8 +98,6 @@ class TaskResponse(BaseModel):
     title: str
     description: str
     amount: float
-    category_id: Optional[str]
-    priority_id: Optional[str]
     status: str
     due_date: Optional[datetime]
     assigned_driver_id: Optional[str]
@@ -132,9 +106,17 @@ class TaskResponse(BaseModel):
     updated_at: datetime
     completed_at: Optional[datetime]
 
-class LocationUpdate(BaseModel):
-    latitude: float
-    longitude: float
+class MessageCreate(BaseModel):
+    receiver_id: str
+    content: str
+
+class MessageResponse(BaseModel):
+    id: str
+    sender_id: str
+    receiver_id: str
+    content: str
+    timestamp: datetime
+    read: bool
 
 class DriverLocationResponse(BaseModel):
     driver_id: str
@@ -253,82 +235,58 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         created_at=current_user["created_at"]
     )
 
-# ===================== CATEGORY ROUTES =====================
+# ===================== MESSAGE ROUTES =====================
 
-@api_router.post("/categories", response_model=CategoryResponse)
-async def create_category(data: CategoryCreate, current_user: dict = Depends(get_current_user)):
-    category_id = str(uuid.uuid4())
-    category = {
-        "id": category_id,
-        "name": data.name,
-        "color": data.color,
-        "created_by": current_user["id"],
-        "created_at": datetime.utcnow()
+@api_router.post("/messages/send", response_model=MessageResponse)
+async def send_message(data: MessageCreate, current_user: dict = Depends(get_current_user)):
+    # Verify receiver exists
+    receiver = await db.users.find_one({"id": data.receiver_id})
+    if not receiver:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    message_id = str(uuid.uuid4())
+    message = {
+        "id": message_id,
+        "sender_id": current_user["id"],
+        "receiver_id": data.receiver_id,
+        "content": data.content,
+        "timestamp": datetime.utcnow(),
+        "read": False
     }
-    await db.categories.insert_one(category)
-    return CategoryResponse(**category)
+    
+    await db.messages.insert_one(message)
+    return MessageResponse(**message)
 
-@api_router.get("/categories", response_model=List[CategoryResponse])
-async def get_categories(current_user: dict = Depends(get_current_user)):
-    categories = await db.categories.find().to_list(100)
-    return [CategoryResponse(**c) for c in categories]
+@api_router.get("/messages/conversation/{other_user_id}", response_model=List[MessageResponse])
+async def get_conversation(other_user_id: str, current_user: dict = Depends(get_current_user)):
+    messages = await db.messages.find({
+        "$or": [
+            {"sender_id": current_user["id"], "receiver_id": other_user_id},
+            {"sender_id": other_user_id, "receiver_id": current_user["id"]}
+        ]
+    }).sort("timestamp", 1).to_list(1000)
+    
+    return [MessageResponse(**m) for m in messages]
 
-@api_router.put("/categories/{category_id}", response_model=CategoryResponse)
-async def update_category(category_id: str, data: CategoryCreate, current_user: dict = Depends(get_current_user)):
-    result = await db.categories.find_one_and_update(
-        {"id": category_id},
-        {"$set": {"name": data.name, "color": data.color}},
-        return_document=True
-    )
-    if not result:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return CategoryResponse(**result)
+# ===================== ADMIN ROUTES =====================
 
-@api_router.delete("/categories/{category_id}")
-async def delete_category(category_id: str, current_user: dict = Depends(get_current_user)):
-    result = await db.categories.delete_one({"id": category_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return {"message": "Category deleted"}
-
-# ===================== PRIORITY ROUTES =====================
-
-@api_router.post("/priorities", response_model=PriorityResponse)
-async def create_priority(data: PriorityCreate, current_user: dict = Depends(get_current_user)):
-    priority_id = str(uuid.uuid4())
-    priority = {
-        "id": priority_id,
-        "name": data.name,
-        "level": data.level,
-        "color": data.color,
-        "created_by": current_user["id"],
-        "created_at": datetime.utcnow()
-    }
-    await db.priorities.insert_one(priority)
-    return PriorityResponse(**priority)
-
-@api_router.get("/priorities", response_model=List[PriorityResponse])
-async def get_priorities(current_user: dict = Depends(get_current_user)):
-    priorities = await db.priorities.find().sort("level", -1).to_list(100)
-    return [PriorityResponse(**p) for p in priorities]
-
-@api_router.put("/priorities/{priority_id}", response_model=PriorityResponse)
-async def update_priority(priority_id: str, data: PriorityCreate, current_user: dict = Depends(get_current_user)):
-    result = await db.priorities.find_one_and_update(
-        {"id": priority_id},
-        {"$set": {"name": data.name, "level": data.level, "color": data.color}},
-        return_document=True
-    )
-    if not result:
-        raise HTTPException(status_code=404, detail="Priority not found")
-    return PriorityResponse(**result)
-
-@api_router.delete("/priorities/{priority_id}")
-async def delete_priority(priority_id: str, current_user: dict = Depends(get_current_user)):
-    result = await db.priorities.delete_one({"id": priority_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Priority not found")
-    return {"message": "Priority deleted"}
+@api_router.delete("/admin/reset-data")
+async def reset_data(current_user: dict = Depends(get_admin_user)):
+    # Delete all data from collections except users (or maybe completely wipe)
+    # The requirement is "reset the app entirely". 
+    # Let's wipe everything except the current admin user so they don't get locked out immediately
+    
+    # Clear tasks
+    await db.tasks.delete_many({})
+    # Clear messages
+    await db.messages.delete_many({})
+    # Clear locations
+    await db.locations.delete_many({})
+    
+    # For users, keep the current admin, delete everyone else
+    await db.users.delete_many({"id": {"$ne": current_user["id"]}})
+    
+    return {"message": "App data reset successfully"}
 
 # ===================== TASK ROUTES =====================
 
@@ -341,8 +299,6 @@ async def create_task(data: TaskCreate, current_user: dict = Depends(get_current
         "title": data.title,
         "description": data.description or "",
         "amount": data.amount,
-        "category_id": data.category_id,
-        "priority_id": data.priority_id,
         "status": "pending",
         "due_date": data.due_date,
         "assigned_driver_id": data.assigned_driver_id,
@@ -357,8 +313,6 @@ async def create_task(data: TaskCreate, current_user: dict = Depends(get_current
 @api_router.get("/tasks", response_model=List[TaskResponse])
 async def get_tasks(
     status: Optional[str] = None,
-    category_id: Optional[str] = None,
-    priority_id: Optional[str] = None,
     assigned_driver_id: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
@@ -375,10 +329,6 @@ async def get_tasks(
     
     if status:
         query["status"] = status
-    if category_id:
-        query["category_id"] = category_id
-    if priority_id:
-        query["priority_id"] = priority_id
     
     tasks = await db.tasks.find(query).sort("created_at", -1).to_list(1000)
     return [TaskResponse(**t) for t in tasks]

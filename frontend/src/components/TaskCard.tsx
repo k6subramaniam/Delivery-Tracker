@@ -6,8 +6,6 @@ import { format } from 'date-fns';
 
 interface TaskCardProps {
   task: Task;
-  category?: Category;
-  priority?: Priority;
   onPress: () => void;
   onComplete?: () => void;
   onDelete?: () => void;
@@ -27,7 +25,7 @@ const getStatusLabel = (status: string) => {
   }
 };
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, category, priority, onPress, onComplete, onDelete }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onPress, onComplete, onDelete }) => {
   const isCompleted = task.status === 'completed';
   const statusColor = getStatusColor(task.status);
 

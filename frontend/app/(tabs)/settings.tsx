@@ -265,18 +265,14 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
           </TouchableOpacity>
 
-          {isAdmin && (
-            <>
-              <View style={styles.menuDivider} />
-              <TouchableOpacity style={styles.menuItem} onPress={resetAllData}>
-                <View style={[styles.menuIconContainer, { backgroundColor: '#FEE2E2' }]}>
-                  <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                </View>
-                <Text style={[styles.menuText, { color: '#EF4444' }]}>Reset All Data</Text>
-                <Ionicons name="warning-outline" size={20} color="#EF4444" />
-              </TouchableOpacity>
-            </>
-          )}
+          <View style={styles.menuDivider} />
+          <TouchableOpacity style={styles.menuItem} onPress={resetAllData}>
+            <View style={[styles.menuIconContainer, { backgroundColor: '#FEE2E2' }]}>
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            </View>
+            <Text style={[styles.menuText, { color: '#EF4444' }]}>Reset All Data</Text>
+            <Ionicons name="warning-outline" size={20} color="#EF4444" />
+          </TouchableOpacity>
 
           <View style={styles.logoutContainer}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>

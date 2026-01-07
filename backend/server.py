@@ -329,7 +329,7 @@ async def get_conversations(current_user: dict = Depends(get_current_user)):
 # ===================== ADMIN ROUTES =====================
 
 @api_router.delete("/admin/reset-data")
-async def reset_data(current_user: dict = Depends(get_admin_user)):
+async def reset_data(current_user: dict = Depends(get_current_user)):
     # Delete all data from collections except users (or maybe completely wipe)
     # The requirement is "reset the app entirely". 
     # Let's wipe everything except the current admin user so they don't get locked out immediately

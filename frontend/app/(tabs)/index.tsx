@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
-import { dashboardAPI, tasksAPI } from '../../src/services/api';
+import { dashboardAPI, tasksAPI, messagesAPI } from '../../src/services/api';
 import { StatCard } from '../../src/components/StatCard';
 import { TaskCard } from '../../src/components/TaskCard';
 import { DashboardStats, Task } from '../../src/types';
@@ -42,11 +42,13 @@ export default function DashboardScreen() {
   const [driverEarnings, setDriverEarnings] = useState<DriverEarnings[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const loadData = useCallback(async () => {
     try {
       const promises: Promise<any>[] = [
         dashboardAPI.getStats(),
+        messagesAPI.getUnreadCount(),
       ];
 
       // Different data fetching based on role
@@ -64,14 +66,15 @@ export default function DashboardScreen() {
       
       const statsRes = results[0];
       setStats(statsRes.data);
+      if (results[1]) setUnreadCount(results[1].data.count);
 
       if (isAdmin) {
-        // results[1] is tasks, results[2] is driver earnings
-        setRecentTasks(results[1].data.slice(0, 5));
-        setDriverEarnings(results[2].data);
+        // results[2] is tasks, results[3] is driver earnings
+        setRecentTasks(results[2].data.slice(0, 5));
+        setDriverEarnings(results[3].data);
       } else {
         // Drivers: Fetch ALL tasks so they can see pending work too
-        const allTasks = results[1].data;
+        const allTasks = results[2].data;
         setRecentTasks(allTasks.slice(0, 5)); // Show recent 5 of ANY status
       }
 
@@ -141,9 +144,14 @@ export default function DashboardScreen() {
               <Text style={[styles.userName, { color: colors.headerText }]}>{isAdmin ? 'Admin' : user?.name || 'Driver'}</Text>
             </View>
           </View>
-          <TouchableOpacity style={[styles.notificationButton, { backgroundColor: colors.card, shadowColor: theme === 'dark' ? '#000' : '#000' }]}>
+          <TouchableOpacity 
+            style={[styles.notificationButton, { backgroundColor: colors.card, shadowColor: theme === 'dark' ? '#000' : '#000' }]}
+            onPress={() => router.push('/notifications')}
+          >
             <Ionicons name="notifications-outline" size={24} color={colors.primary} />
-            <View style={[styles.notificationBadge, { backgroundColor: colors.primary, borderColor: colors.card }]} />
+            {unreadCount > 0 && (
+              <View style={[styles.notificationBadge, { backgroundColor: colors.primary, borderColor: colors.card }]} />
+            )}
           </TouchableOpacity>
         </View>
 

@@ -47,6 +47,14 @@ export interface DashboardStats {
   driver_count: number;
 }
 
+export interface Conversation {
+  user_id: string;
+  user_name: string;
+  last_message: string;
+  timestamp: string;
+  unread_count: number;
+}
+
 export interface AuthState {
   user: User | null;
   token: string | null;

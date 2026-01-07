@@ -43,6 +43,8 @@ export const tasksAPI = {
 export const messagesAPI = {
   send: (data: { receiver_id: string; content: string }) => api.post('/messages/send', data),
   getConversation: (otherUserId: string) => api.get(`/messages/conversation/${otherUserId}`),
+  getConversations: () => api.get('/messages/conversations'),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
 };
 
 // Admin API

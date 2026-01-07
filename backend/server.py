@@ -110,6 +110,16 @@ class MessageCreate(BaseModel):
     receiver_id: str
     content: str
 
+class UnreadCountResponse(BaseModel):
+    count: int
+
+class ConversationSummary(BaseModel):
+    user_id: str
+    user_name: str
+    last_message: str
+    timestamp: datetime
+    unread_count: int
+
 class MessageResponse(BaseModel):
     id: str
     sender_id: str
@@ -266,7 +276,55 @@ async def get_conversation(other_user_id: str, current_user: dict = Depends(get_
         ]
     }).sort("timestamp", 1).to_list(1000)
     
+    # Mark messages as read where I am receiver
+    for m in messages:
+        if m.get("receiver_id") == current_user["id"] and not m.get("read"):
+             await db.messages.update_one({"id": m["id"]}, {"$set": {"read": True}})
+             m["read"] = True
+    
     return [MessageResponse(**m) for m in messages]
+
+@api_router.get("/notifications/unread-count", response_model=UnreadCountResponse)
+async def get_unread_count(current_user: dict = Depends(get_current_user)):
+    count = await db.messages.count_documents({
+        "receiver_id": current_user["id"],
+        "read": False
+    })
+    return {"count": count}
+
+@api_router.get("/messages/conversations", response_model=List[ConversationSummary])
+async def get_conversations(current_user: dict = Depends(get_current_user)):
+    # Get all messages where user is sender or receiver
+    messages = await db.messages.find({
+        "$or": [
+            {"sender_id": current_user["id"]},
+            {"receiver_id": current_user["id"]}
+        ]
+    }).sort("timestamp", -1).to_list(10000)
+    
+    conversations = {}
+    
+    for m in messages:
+        other_id = m["receiver_id"] if m["sender_id"] == current_user["id"] else m["sender_id"]
+        
+        if other_id not in conversations:
+            # Need to fetch user name
+            other_user = await db.users.find_one({"id": other_id})
+            user_name = other_user["name"] if other_user else "Unknown User"
+            
+            conversations[other_id] = {
+                "user_id": other_id,
+                "user_name": user_name,
+                "last_message": m["content"],
+                "timestamp": m["timestamp"],
+                "unread_count": 0
+            }
+        
+        # Increment unread if I am receiver and not read
+        if m["receiver_id"] == current_user["id"] and not m.get("read"):
+            conversations[other_id]["unread_count"] += 1
+            
+    return list(conversations.values())
 
 # ===================== ADMIN ROUTES =====================
 

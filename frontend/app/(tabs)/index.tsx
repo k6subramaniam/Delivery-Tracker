@@ -24,6 +24,8 @@ interface DriverEarnings {
   driver_name: string;
   total_earnings: number;
   task_count: number;
+  pending_amount: number;
+  pending_count: number;
 }
 
 export default function DashboardScreen() {
@@ -55,8 +57,8 @@ export default function DashboardScreen() {
         // Add driver payments fetch
         promises.push(dashboardAPI.getDriverPayments());
       } else {
-        // Drivers see only their COMPLETED tasks as "owed payments"
-        promises.push(tasksAPI.getAll({ status: 'completed' }));
+        // Drivers see ALL tasks to manage their work and see payments
+        promises.push(tasksAPI.getAll());
       }
 
       const results = await Promise.all(promises);
@@ -74,8 +76,9 @@ export default function DashboardScreen() {
         setRecentTasks(results[3].data.slice(0, 5));
         setDriverEarnings(results[4].data);
       } else {
-        // results[3] is filtered tasks
-        setRecentTasks(results[3].data.slice(0, 5)); // Show recent 5 completed
+        // Drivers: Fetch ALL tasks so they can see pending work too
+        const allTasks = results[3].data;
+        setRecentTasks(allTasks.slice(0, 5)); // Show recent 5 of ANY status
       }
 
     } catch (error) {
@@ -197,10 +200,10 @@ export default function DashboardScreen() {
         <View style={styles.recentSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              {isAdmin ? 'Drivers Owed Payments' : 'Recent Earnings (Owed Payments)'}
+              {isAdmin ? 'Drivers Activity & Payments' : 'Recent Tasks'}
             </Text>
             {isDriver && (
-              <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/tasks', params: { filter: 'completed' } })}>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/tasks' })}>
                 <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
             )}
@@ -210,8 +213,8 @@ export default function DashboardScreen() {
             // Admin View: List of Drivers and their earnings
             driverEarnings.length === 0 ? (
               <View style={styles.emptyState}>
-                <Ionicons name="cash-outline" size={48} color="#D1D5DB" />
-                <Text style={styles.emptyText}>No pending payments for drivers</Text>
+                <Ionicons name="people-outline" size={48} color="#D1D5DB" />
+                <Text style={styles.emptyText}>No driver activity yet</Text>
               </View>
             ) : (
               driverEarnings.map(earning => (
@@ -222,19 +225,28 @@ export default function DashboardScreen() {
                     </View>
                     <View>
                       <Text style={styles.earningName}>{earning.driver_name}</Text>
-                      <Text style={styles.earningSubtext}>{earning.task_count} completed tasks</Text>
+                      <Text style={styles.earningSubtext}>
+                        {earning.task_count} completed • {earning.pending_count} pending
+                      </Text>
                     </View>
                   </View>
-                  <Text style={styles.earningAmount}>${earning.total_earnings.toFixed(2)}</Text>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={styles.earningAmount}>${earning.total_earnings.toFixed(2)}</Text>
+                    {earning.pending_amount > 0 && (
+                      <Text style={[styles.earningSubtext, { color: '#F59E0B' }]}>
+                        +${earning.pending_amount.toFixed(2)} pending
+                      </Text>
+                    )}
+                  </View>
                 </View>
               ))
             )
           ) : (
-            // Driver View: List of Completed Tasks
+            // Driver View: List of ALL Recent Tasks
             recentTasks.length === 0 ? (
               <View style={styles.emptyState}>
-                <Ionicons name="wallet-outline" size={48} color="#D1D5DB" />
-                <Text style={styles.emptyText}>No completed tasks yet</Text>
+                <Ionicons name="clipboard-outline" size={48} color="#D1D5DB" />
+                <Text style={styles.emptyText}>No tasks yet</Text>
               </View>
             ) : (
               recentTasks.map(task => (
@@ -244,7 +256,7 @@ export default function DashboardScreen() {
                   category={getCategory(task.category_id)}
                   priority={getPriority(task.priority_id)}
                   onPress={() => router.push(`/task/${task.id}`)}
-                  // Don't show complete/delete actions here as it's a history view
+                  onComplete={() => handleCompleteTask(task.id)}
                 />
               ))
             )

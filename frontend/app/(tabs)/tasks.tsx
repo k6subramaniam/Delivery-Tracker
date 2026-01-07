@@ -17,11 +17,12 @@ import { useAuth } from '../../src/context/AuthContext';
 import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/services/api';
 import { TaskCard } from '../../src/components/TaskCard';
 import { Task, Category, Priority, User } from '../../src/types';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function TasksScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const isAdmin = user?.role === 'admin';
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -34,6 +35,13 @@ export default function TasksScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Handle URL params for initial filter
+  useEffect(() => {
+    if (params.filter && typeof params.filter === 'string') {
+      setFilter(params.filter);
+    }
+  }, [params.filter]);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -166,7 +174,7 @@ export default function TasksScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color="#EF6A46" />
       </View>
     );
   }
@@ -183,37 +191,39 @@ export default function TasksScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterContainer}
-      >
-        {filterOptions.map(option => (
-          <TouchableOpacity
-            key={option.key}
-            style={[
-              styles.filterButton,
-              filter === option.key && styles.filterButtonActive,
-            ]}
-            onPress={() => setFilter(option.key)}
-          >
-            <Text
+      <View style={styles.filterWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterContainer}
+        >
+          {filterOptions.map(option => (
+            <TouchableOpacity
+              key={option.key}
               style={[
-                styles.filterText,
-                filter === option.key && styles.filterTextActive,
+                styles.filterButton,
+                filter === option.key && styles.filterButtonActive,
               ]}
+              onPress={() => setFilter(option.key)}
             >
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Text
+                style={[
+                  styles.filterText,
+                  filter === option.key && styles.filterTextActive,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color="#9CA3AF" />
+        <Ionicons name="search" size={20} color="#9CA3AF" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search tasks"
+          placeholder="Search tasks..."
           placeholderTextColor="#9CA3AF"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -226,22 +236,10 @@ export default function TasksScreen() {
         )}
       </View>
 
-      <View style={styles.resultsRow}>
-        <Text style={styles.resultsText}>
-          Showing {visibleTasks.length} {visibleTasks.length === 1 ? 'task' : 'tasks'}
-        </Text>
-        {normalizedQuery.length > 0 && (
-          <View style={styles.searchTag}>
-            <Ionicons name="filter" size={12} color="#3B82F6" />
-            <Text style={styles.searchTagText}>Filtered</Text>
-          </View>
-        )}
-      </View>
-
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#EF6A46" />
         }
         showsVerticalScrollIndicator={false}
       >
@@ -285,21 +283,21 @@ export default function TasksScreen() {
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>New Task</Text>
-            <TouchableOpacity onPress={handleAddTask} disabled={saving}>
+            <TouchableOpacity onPress={handleAddTask} disabled={saving} style={styles.saveButton}>
               {saving ? (
-                <ActivityIndicator size="small" color="#3B82F6" />
+                <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.saveText}>Save</Text>
+                <Text style={styles.saveText}>Save Task</Text>
               )}
             </TouchableOpacity>
           </View>
 
           <ScrollView contentContainerStyle={styles.modalContent}>
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Title *</Text>
+              <Text style={styles.label}>Title</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter task title"
+                placeholder="Enter task title *"
                 placeholderTextColor="#9CA3AF"
                 value={title}
                 onChangeText={setTitle}
@@ -320,111 +318,105 @@ export default function TasksScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Amount ($) *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0.00"
-                placeholderTextColor="#9CA3AF"
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="decimal-pad"
-              />
+              <Text style={styles.label}>Amount</Text>
+              <View style={styles.amountInputContainer}>
+                <Text style={styles.currencyPrefix}>$</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  placeholder="0.00 *"
+                  placeholderTextColor="#9CA3AF"
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="decimal-pad"
+                />
+              </View>
             </View>
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.optionsRow}>
-                  {categories.map(cat => (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[
-                        styles.optionChip,
-                        { borderColor: cat.color },
-                        selectedCategory === cat.id && { backgroundColor: cat.color },
-                      ]}
-                      onPress={() => setSelectedCategory(
-                        selectedCategory === cat.id ? null : cat.id
-                      )}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          { color: selectedCategory === cat.id ? '#FFF' : cat.color },
-                        ]}
-                      >
-                        {cat.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Priority</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.optionsRow}>
-                  {priorities.map(prio => (
-                    <TouchableOpacity
-                      key={prio.id}
-                      style={[
-                        styles.optionChip,
-                        { borderColor: prio.color },
-                        selectedPriority === prio.id && { backgroundColor: prio.color },
-                      ]}
-                      onPress={() => setSelectedPriority(
-                        selectedPriority === prio.id ? null : prio.id
-                      )}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          { color: selectedPriority === prio.id ? '#FFF' : prio.color },
-                        ]}
-                      >
-                        {prio.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-
-            {isAdmin && drivers.length > 0 && (
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Assign to Driver</Text>
+              <View style={styles.pickerContainer}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={styles.optionsRow}>
-                    {drivers.map(driver => (
+                    {categories.map(cat => (
                       <TouchableOpacity
-                        key={driver.id}
+                        key={cat.id}
                         style={[
                           styles.optionChip,
-                          { borderColor: '#3B82F6' },
-                          selectedDriver === driver.id && { backgroundColor: '#3B82F6' },
+                          selectedCategory === cat.id && styles.optionChipSelected,
+                          selectedCategory === cat.id && { backgroundColor: '#EF6A46', borderColor: '#EF6A46' }
                         ]}
-                        onPress={() => setSelectedDriver(
-                          selectedDriver === driver.id ? null : driver.id
+                        onPress={() => setSelectedCategory(
+                          selectedCategory === cat.id ? null : cat.id
                         )}
                       >
-                        <Ionicons
-                          name="person"
-                          size={14}
-                          color={selectedDriver === driver.id ? '#FFF' : '#3B82F6'}
-                        />
                         <Text
                           style={[
                             styles.optionText,
-                            { color: selectedDriver === driver.id ? '#FFF' : '#3B82F6' },
+                            selectedCategory === cat.id && styles.optionTextSelected
                           ]}
                         >
-                          {driver.name}
+                          {cat.name}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
                 </ScrollView>
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Priority</Text>
+              <View style={styles.segmentedControl}>
+                {priorities.map((prio, index) => (
+                  <TouchableOpacity
+                    key={prio.id}
+                    style={[
+                      styles.segmentButton,
+                      selectedPriority === prio.id && styles.segmentButtonActive,
+                      selectedPriority === prio.id && { backgroundColor: prio.color + '20', borderColor: prio.color }
+                    ]}
+                    onPress={() => setSelectedPriority(prio.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        selectedPriority === prio.id && { color: prio.color, fontWeight: '700' }
+                      ]}
+                    >
+                      {prio.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {isAdmin && drivers.length > 0 && (
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Assign Driver</Text>
+                <View style={styles.driverList}>
+                  {drivers.map(driver => (
+                    <TouchableOpacity
+                      key={driver.id}
+                      style={[
+                        styles.driverItem,
+                        selectedDriver === driver.id && styles.driverItemSelected
+                      ]}
+                      onPress={() => setSelectedDriver(
+                        selectedDriver === driver.id ? null : driver.id
+                      )}
+                    >
+                      <View style={styles.driverAvatar}>
+                        <Text style={styles.driverInitials}>
+                          {driver.name.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text style={styles.driverName}>{driver.name}</Text>
+                      {selectedDriver === driver.id && (
+                        <Ionicons name="checkmark-circle" size={20} color="#EF6A46" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             )}
           </ScrollView>
@@ -437,55 +429,63 @@ export default function TasksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF9F0',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF9F0',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1F2937', // Dark brown/black
   },
   addButton: {
-    backgroundColor: '#3B82F6',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    backgroundColor: '#3B82F6', // Blue for primary action as per Image 1? Or Orange? Image 1 has Blue + button. Image 7 has Orange Save. Let's stick to Image 1's blue for + button for consistency with that specific screen, or make it cohesive. Let's use blue to match Image 1 exactly.
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  filterWrapper: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
   },
   filterContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 8,
+    gap: 12,
   },
   filterButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 20, // Rounded pill
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    marginRight: 8,
+    minWidth: 80,
+    alignItems: 'center',
   },
   filterButtonActive: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+    backgroundColor: '#EF6A46', // Orange active state (or Blue like Image 1? Image 1 is Blue. Let's try Orange to match the rest of the app for cohesion, or Image 1 Blue. Image 8 shows Orange pills. Let's use Orange #EF6A46).
+    borderColor: '#EF6A46',
   },
   filterText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#6B7280',
   },
   filterTextActive: {
@@ -494,48 +494,29 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF', // White background
+    marginHorizontal: 20,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: 50,
+    borderRadius: 25, // Fully rounded search bar
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 8,
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     color: '#1F2937',
-  },
-  resultsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: 16,
-    marginBottom: 8,
-  },
-  resultsText: {
-    fontSize: 13,
-    color: '#6B7280',
-  },
-  searchTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  searchTagText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#3B82F6',
+    marginLeft: 8,
   },
   content: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   emptyState: {
     alignItems: 'center',
@@ -552,44 +533,51 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 4,
   },
+  
+  // Modal Styles
   modalContainer: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF9F0',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 0,
   },
   cancelText: {
     fontSize: 16,
     color: '#6B7280',
+    fontWeight: '500',
   },
   modalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#EF6A46', // Orange title
+  },
+  saveButton: {
+    backgroundColor: '#EF6A46',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   saveText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3B82F6',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   modalContent: {
-    padding: 16,
+    padding: 20,
   },
   formGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#9CA3AF', // Muted label color
     marginBottom: 8,
   },
   input: {
@@ -600,27 +588,123 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1F2937',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#EF6A46', // Orange border
   },
   textArea: {
-    height: 100,
+    height: 120,
     textAlignVertical: 'top',
+  },
+  amountInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EF6A46',
+    paddingHorizontal: 16,
+  },
+  currencyPrefix: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginRight: 4,
+  },
+  amountInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  pickerContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   optionsRow: {
     flexDirection: 'row',
     gap: 8,
+    padding: 8,
   },
   optionChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    borderWidth: 1.5,
-    gap: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+  },
+  optionChipSelected: {
+    // Styles applied inline for dynamic colors
   },
   optionText: {
     fontSize: 14,
     fontWeight: '500',
+    color: '#6B7280',
+  },
+  optionTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 4,
+  },
+  segmentButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  segmentButtonActive: {
+    backgroundColor: '#FFF7ED',
+  },
+  segmentText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  driverList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EF6A46', // Orange border
+    padding: 8,
+  },
+  driverItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    gap: 12,
+  },
+  driverItemSelected: {
+    backgroundColor: '#FFF7ED',
+  },
+  driverAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EF6A46', // Orange avatar bg
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  driverInitials: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  driverName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
   },
 });

@@ -16,11 +16,15 @@ import { driversAPI } from '../../src/services/api';
 import { DriverLocation } from '../../src/types';
 import { format } from 'date-fns';
 
+import { useTheme } from '../../src/context/ThemeContext';
+
 export default function MapScreen() {
   const [locations, setLocations] = useState<DriverLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { colors, theme } = useTheme();
+
 
   const loadLocations = async () => {
     try {
@@ -52,42 +56,42 @@ export default function MapScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#EF6A46" />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Floating Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Text style={styles.searchText}>Deliveries</Text>
-          <Ionicons name="search" size={24} color="#EF6A46" />
+        <View style={[styles.searchBar, { backgroundColor: colors.inputBg, shadowColor: theme === 'dark' ? 'transparent' : '#000' }]}>
+          <Text style={[styles.searchText, { color: colors.text }]}>Deliveries</Text>
+          <Ionicons name="search" size={24} color={colors.primary} />
         </View>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter" size={24} color="#EF6A46" />
+        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.card, shadowColor: theme === 'dark' ? 'transparent' : '#000' }]}>
+          <Ionicons name="filter" size={24} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#EF6A46" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         showsVerticalScrollIndicator={false}
       >
         {/* Map Visual Representation */}
         <View style={styles.mapVisual}>
-          <View style={styles.mapBackground}>
+          <View style={[styles.mapBackground, { backgroundColor: theme === 'dark' ? '#333' : '#E5E7EB' }]}>
             {/* Grid lines for visual effect */}
-            <View style={styles.gridOverlay}>
+            <View style={[styles.gridOverlay, { backgroundColor: theme === 'dark' ? '#222' : '#F3F4F6' }]}>
               {[...Array(5)].map((_, i) => (
-                <View key={`h-${i}`} style={[styles.gridLine, styles.horizontalLine, { top: `${i * 25}%` }]} />
+                <View key={`h-${i}`} style={[styles.gridLine, styles.horizontalLine, { top: `${i * 25}%`, backgroundColor: theme === 'dark' ? '#444' : '#FFFFFF' }]} />
               ))}
               {[...Array(5)].map((_, i) => (
-                <View key={`v-${i}`} style={[styles.gridLine, styles.verticalLine, { left: `${i * 25}%` }]} />
+                <View key={`v-${i}`} style={[styles.gridLine, styles.verticalLine, { left: `${i * 25}%`, backgroundColor: theme === 'dark' ? '#444' : '#FFFFFF' }]} />
               ))}
             </View>
             
@@ -105,8 +109,8 @@ export default function MapScreen() {
                     style={[styles.mapMarker, { left: `${xPercent}%`, top: `${yPercent}%` }]}
                     onPress={() => openInMaps(loc.latitude, loc.longitude)}
                   >
-                    <View style={styles.markerPulse} />
-                    <View style={styles.markerDot}>
+                    <View style={[styles.markerPulse, { backgroundColor: colors.primary }]} />
+                    <View style={[styles.markerDot, { backgroundColor: colors.primary, borderColor: colors.card }]}>
                       <Ionicons name="bus" size={16} color="#FFFFFF" />
                     </View>
                   </TouchableOpacity>
@@ -117,33 +121,33 @@ export default function MapScreen() {
         </View>
 
         {/* Bottom Sheet Style List */}
-        <View style={styles.bottomSheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.listTitle}>Nearby Tasks</Text>
+        <View style={[styles.bottomSheet, { backgroundColor: colors.card, shadowColor: theme === 'dark' ? 'transparent' : '#000' }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.listTitle, { color: colors.headerText }]}>Nearby Tasks</Text>
           
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
             {locations.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>No active drivers found</Text>
+              <View style={[styles.emptyCard, { backgroundColor: colors.background }]}>
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No active drivers found</Text>
               </View>
             ) : (
               locations.map((location) => (
                 <TouchableOpacity
                   key={location.driver_id}
-                  style={styles.driverCard}
+                  style={[styles.driverCard, { backgroundColor: theme === 'dark' ? '#333' : '#FFFFFF', shadowColor: theme === 'dark' ? 'transparent' : '#000' }]}
                   onPress={() => openInMaps(location.latitude, location.longitude)}
                 >
                   <View style={styles.cardHeader}>
-                    <Text style={styles.driverName}>Package Delivery - {location.driver_name}</Text>
+                    <Text style={[styles.driverName, { color: colors.primary }]}>Package Delivery - {location.driver_name}</Text>
                   </View>
-                  <Text style={styles.addressText}>123 Main St, Suite 4B</Text>
+                  <Text style={[styles.addressText, { color: colors.textSecondary }]}>123 Main St, Suite 4B</Text>
                   <View style={styles.cardFooter}>
-                    <Text style={styles.distanceText}>0.5 miles</Text>
-                    <View style={styles.statusBadge}>
-                      <Text style={styles.statusText}>Pending</Text>
+                    <Text style={[styles.distanceText, { color: colors.text }]}>0.5 miles</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: theme === 'dark' ? '#442' : '#FEF3C7' }]}>
+                      <Text style={[styles.statusText, { color: '#D97706' }]}>Pending</Text>
                     </View>
                   </View>
-                  <TouchableOpacity style={styles.viewDetailsButton}>
+                  <TouchableOpacity style={[styles.viewDetailsButton, { backgroundColor: colors.primary }]}>
                     <Text style={styles.viewDetailsText}>View Details</Text>
                   </TouchableOpacity>
                 </TouchableOpacity>

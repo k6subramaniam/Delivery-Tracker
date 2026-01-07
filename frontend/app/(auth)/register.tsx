@@ -16,6 +16,8 @@ import { useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 
+import { useTheme } from '../../src/context/ThemeContext';
+
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,6 +27,7 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
+  const { colors } = useTheme();
   const router = useRouter();
 
   const handleRegister = async () => {
@@ -55,51 +58,51 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join our delivery network</Text>
+            <Text style={[styles.title, { color: colors.headerText }]}>Create Account</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Join our delivery network</Text>
           </View>
 
           <View style={styles.form}>
             {/* Minimalist Role Selector */}
-            <View style={styles.roleContainer}>
+            <View style={[styles.roleContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <TouchableOpacity
-                style={[styles.roleButton, role === 'driver' && styles.roleButtonActive]}
+                style={[styles.roleButton, role === 'driver' && { backgroundColor: colors.primary }]}
                 onPress={() => setRole('driver')}
               >
-                <Text style={[styles.roleText, role === 'driver' && styles.roleTextActive]}>Driver</Text>
+                <Text style={[styles.roleText, { color: role === 'driver' ? '#FFFFFF' : colors.textSecondary }]}>Driver</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.roleButton, role === 'admin' && styles.roleButtonActive]}
+                style={[styles.roleButton, role === 'admin' && { backgroundColor: colors.primary }]}
                 onPress={() => setRole('admin')}
               >
-                <Text style={[styles.roleText, role === 'admin' && styles.roleTextActive]}>Admin</Text>
+                <Text style={[styles.roleText, { color: role === 'admin' ? '#FFFFFF' : colors.textSecondary }]}>Admin</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={20} color="#F97316" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+              <Ionicons name="person-outline" size={20} color={colors.primary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Full Name"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textSecondary}
                 value={name}
                 onChangeText={setName}
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#F97316" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+              <Ionicons name="mail-outline" size={20} color={colors.primary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Email"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textSecondary}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -107,27 +110,27 @@ export default function RegisterScreen() {
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#F97316" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.primary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Password"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textSecondary}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Ionicons name="checkmark-done-outline" size={20} color="#F97316" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+              <Ionicons name="checkmark-done-outline" size={20} color={colors.primary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Confirm Password"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textSecondary}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showPassword}
@@ -135,12 +138,18 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.termsContainer}>
-              <Ionicons name="checkbox-outline" size={20} color="#9CA3AF" />
-              <Text style={styles.termsText}>I agree to the <Text style={styles.termsLink}>Terms & Privacy Policy</Text></Text>
+              <Ionicons name="checkbox-outline" size={20} color={colors.textSecondary} />
+              <Text style={[styles.termsText, { color: colors.textSecondary }]}>
+                I agree to the <Text style={[styles.termsLink, { color: colors.primary }]}>Terms & Privacy Policy</Text>
+              </Text>
             </View>
 
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                { backgroundColor: colors.primary, shadowColor: colors.primary },
+                loading && styles.buttonDisabled
+              ]}
               onPress={handleRegister}
               disabled={loading}
             >
@@ -152,25 +161,25 @@ export default function RegisterScreen() {
             </TouchableOpacity>
 
             <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>or sign up with</Text>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <Text style={[styles.dividerText, { color: colors.textSecondary }]}>or sign up with</Text>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
             </View>
 
             <View style={styles.socialButtons}>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="logo-google" size={24} color="#EA4335" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <Ionicons name="logo-apple" size={24} color="#000000" />
+              <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="logo-apple" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
+              <Text style={[styles.loginText, { color: colors.textSecondary }]}>Already have an account? </Text>
               <Link href="/(auth)/login" asChild>
                 <TouchableOpacity>
-                  <Text style={styles.loginLink}>Log In</Text>
+                  <Text style={[styles.loginLink, { color: colors.primary }]}>Log In</Text>
                 </TouchableOpacity>
               </Link>
             </View>
@@ -184,7 +193,6 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF9F0', // Creamy background
   },
   keyboardView: {
     flex: 1,
@@ -201,12 +209,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1F2937',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6B7280',
   },
   form: {
     gap: 16,
@@ -215,11 +221,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginBottom: 8,
-    backgroundColor: '#FFFFFF',
     padding: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   roleButton: {
     flex: 1,
@@ -228,25 +232,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
   },
-  roleButtonActive: {
-    backgroundColor: '#EF6A46',
-  },
   roleText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
-  },
-  roleTextActive: {
-    color: '#FFFFFF',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     height: 56,
   },
   inputIcon: {
@@ -255,7 +250,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#1F2937',
     height: '100%',
   },
   termsContainer: {
@@ -265,21 +259,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   termsText: {
-    color: '#4B5563',
     fontSize: 14,
   },
   termsLink: {
-    color: '#EF6A46',
     textDecorationLine: 'underline',
   },
   button: {
-    backgroundColor: '#EF6A46', // Vibrant orange
     borderRadius: 28,
     height: 56,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
-    shadowColor: '#EF6A46',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -301,11 +291,9 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
   },
   dividerText: {
     marginHorizontal: 16,
-    color: '#6B7280',
     fontSize: 14,
   },
   socialButtons: {
@@ -318,22 +306,18 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
   },
   loginText: {
-    color: '#6B7280',
     fontSize: 14,
   },
   loginLink: {
-    color: '#EF6A46',
     fontSize: 14,
     fontWeight: '700',
   },

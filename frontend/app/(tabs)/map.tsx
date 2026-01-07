@@ -8,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ export default function MapScreen() {
   const [locations, setLocations] = useState<DriverLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadLocations = async () => {
     try {
@@ -51,53 +53,58 @@ export default function MapScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color="#EF6A46" />
       </View>
     );
   }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Driver Tracking</Text>
-        <View style={styles.driverCount}>
-          <Ionicons name="car" size={16} color="#3B82F6" />
-          <Text style={styles.driverCountText}>{locations.length} active</Text>
+      {/* Floating Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Text style={styles.searchText}>Deliveries</Text>
+          <Ionicons name="search" size={24} color="#EF6A46" />
         </View>
+        <TouchableOpacity style={styles.filterButton}>
+          <Ionicons name="filter" size={24} color="#EF6A46" />
+        </TouchableOpacity>
       </View>
 
-      {locations.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="location-outline" size={64} color="#D1D5DB" />
-          <Text style={styles.emptyTitle}>No driver locations</Text>
-          <Text style={styles.emptySubtitle}>
-            Drivers will appear here when they share their location
-          </Text>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.content}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Map Visual Representation */}
-          <View style={styles.mapVisual}>
-            <View style={styles.mapBackground}>
-              {/* Grid lines for visual effect */}
-              <View style={styles.gridOverlay}>
-                {[...Array(5)].map((_, i) => (
-                  <View key={`h-${i}`} style={[styles.gridLine, styles.horizontalLine, { top: `${i * 25}%` }]} />
-                ))}
-                {[...Array(5)].map((_, i) => (
-                  <View key={`v-${i}`} style={[styles.gridLine, styles.verticalLine, { left: `${i * 25}%` }]} />
-                ))}
-              </View>
-              
-              {/* Driver markers positioned randomly for visual */}
-              {locations.map((loc, index) => {
-                // Create pseudo-random positions based on coordinates
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#EF6A46" />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Map Visual Representation */}
+        <View style={styles.mapVisual}>
+          <View style={styles.mapBackground}>
+            {/* Grid lines for visual effect */}
+            <View style={styles.gridOverlay}>
+              {[...Array(5)].map((_, i) => (
+                <View key={`h-${i}`} style={[styles.gridLine, styles.horizontalLine, { top: `${i * 25}%` }]} />
+              ))}
+              {[...Array(5)].map((_, i) => (
+                <View key={`v-${i}`} style={[styles.gridLine, styles.verticalLine, { left: `${i * 25}%` }]} />
+              ))}
+            </View>
+            
+            {/* Store markers (Static for visual) */}
+            <View style={[styles.storeMarker, { top: '20%', left: '20%' }]}>
+              <Ionicons name="storefront" size={16} color="#FFFFFF" />
+            </View>
+            <View style={[styles.storeMarker, { top: '35%', right: '15%' }]}>
+              <Ionicons name="storefront" size={16} color="#FFFFFF" />
+            </View>
+            <View style={[styles.storeMarker, { bottom: '30%', left: '10%' }]}>
+              <Ionicons name="storefront" size={16} color="#FFFFFF" />
+            </View>
+
+            {/* Driver markers positioned randomly for visual */}
+            {locations.length > 0 ? (
+              locations.map((loc, index) => {
                 const xPercent = ((Math.abs(loc.longitude) % 90) / 90) * 80 + 10;
                 const yPercent = ((Math.abs(loc.latitude) % 90) / 90) * 80 + 10;
                 return (
@@ -108,46 +115,59 @@ export default function MapScreen() {
                   >
                     <View style={styles.markerPulse} />
                     <View style={styles.markerDot}>
-                      <Ionicons name="car" size={14} color="#FFFFFF" />
+                      <Ionicons name="bus" size={16} color="#FFFFFF" />
                     </View>
-                    <Text style={styles.markerLabel}>{loc.driver_name.split(' ')[0]}</Text>
                   </TouchableOpacity>
                 );
-              })}
-            </View>
-            <Text style={styles.mapHint}>Tap a driver to open in OpenStreetMap</Text>
-          </View>
-
-          {/* Driver List */}
-          <Text style={styles.listTitle}>Active Drivers</Text>
-          {locations.map((location) => (
-            <TouchableOpacity
-              key={location.driver_id}
-              style={styles.driverCard}
-              onPress={() => openInMaps(location.latitude, location.longitude)}
-            >
-              <View style={styles.driverIcon}>
-                <Ionicons name="person" size={20} color="#3B82F6" />
-              </View>
-              <View style={styles.driverInfo}>
-                <Text style={styles.driverName}>{location.driver_name}</Text>
-                <Text style={styles.driverTime}>
-                  Updated {format(new Date(location.timestamp), 'MMM d, h:mm a')}
-                </Text>
-                <View style={styles.coordsRow}>
-                  <Ionicons name="location" size={12} color="#6B7280" />
-                  <Text style={styles.coordinates}>
-                    {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-                  </Text>
+              })
+            ) : (
+              // Demo marker if no drivers
+              <View style={[styles.mapMarker, { left: '50%', top: '50%' }]}>
+                <View style={styles.markerPulse} />
+                <View style={styles.markerDot}>
+                  <Ionicons name="bus" size={16} color="#FFFFFF" />
                 </View>
               </View>
-              <View style={styles.actionButton}>
-                <Ionicons name="navigate" size={18} color="#3B82F6" />
+            )}
+          </View>
+        </View>
+
+        {/* Bottom Sheet Style List */}
+        <View style={styles.bottomSheet}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.listTitle}>Nearby Tasks</Text>
+          
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+            {locations.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>No active drivers found</Text>
               </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+            ) : (
+              locations.map((location) => (
+                <TouchableOpacity
+                  key={location.driver_id}
+                  style={styles.driverCard}
+                  onPress={() => openInMaps(location.latitude, location.longitude)}
+                >
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.driverName}>Package Delivery - {location.driver_name}</Text>
+                  </View>
+                  <Text style={styles.addressText}>123 Main St, Suite 4B</Text>
+                  <View style={styles.cardFooter}>
+                    <Text style={styles.distanceText}>0.5 miles</Text>
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusText}>Pending</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity style={styles.viewDetailsButton}>
+                    <Text style={styles.viewDetailsText}>View Details</Text>
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -155,71 +175,72 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF9F0', // Creamy background
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF9F0',
   },
-  header: {
+  searchContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 12,
+    zIndex: 10,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  driverCount: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  driverCountText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#3B82F6',
-  },
-  emptyContainer: {
+  searchBar: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    height: 48,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  searchText: {
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  filterButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFF7ED',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#6B7280',
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginTop: 4,
-    textAlign: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   content: {
-    flex: 1,
-    paddingHorizontal: 16,
+    flexGrow: 1,
   },
   mapVisual: {
-    marginBottom: 24,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    marginBottom: -24, // Overlap effect
+    zIndex: 1,
   },
   mapBackground: {
-    height: 280,
-    backgroundColor: '#E0F2FE',
-    borderRadius: 16,
+    height: 400,
+    backgroundColor: '#E5E7EB', // Greyish map bg
+    borderRadius: 0, // Full bleed visual simulation
     overflow: 'hidden',
     position: 'relative',
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   gridOverlay: {
     position: 'absolute',
@@ -227,39 +248,28 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: '#F3F4F6',
   },
   gridLine: {
     position: 'absolute',
-    backgroundColor: '#BAE6FD',
+    backgroundColor: '#FFFFFF',
   },
   horizontalLine: {
     left: 0,
     right: 0,
-    height: 1,
+    height: 8, // Thicker roads
   },
   verticalLine: {
     top: 0,
     bottom: 0,
-    width: 1,
+    width: 8,
   },
-  mapMarker: {
+  storeMarker: {
     position: 'absolute',
-    alignItems: 'center',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-  },
-  markerPulse: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#3B82F6',
-    opacity: 0.2,
-  },
-  markerDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#3B82F6',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EF6A46', // Orange marker
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -270,80 +280,136 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  markerLabel: {
-    marginTop: 4,
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#1E40AF',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  mapHint: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 8,
-  },
-  listTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
-  },
-  driverCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  driverIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#EFF6FF',
+  mapMarker: {
+    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+    width: 60,
+    height: 60,
+    transform: [{ translateX: -30 }, { translateY: -30 }],
   },
-  driverInfo: {
-    flex: 1,
-    marginLeft: 12,
+  markerPulse: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EF6A46',
+    opacity: 0.3,
   },
-  driverName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  driverTime: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  coordsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    gap: 4,
-  },
-  coordinates: {
-    fontSize: 11,
-    color: '#9CA3AF',
-  },
-  actionButton: {
+  markerDot: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#EF6A46',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  bottomSheet: {
+    backgroundColor: '#FFF7ED', // Light cream sheet
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 12,
+    paddingBottom: 32,
+    minHeight: 300,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 10,
+    zIndex: 2,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#D1D5DB',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  listTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#3E2D2B', // Dark brown
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  horizontalScroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    gap: 16,
+  },
+  driverCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    width: 280,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  cardHeader: {
+    marginBottom: 4,
+  },
+  driverName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#EF6A46', // Orange name
+  },
+  addressText: {
+    fontSize: 14,
+    color: '#4B5563',
+    marginBottom: 12,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  distanceText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  statusBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#D97706',
+  },
+  viewDetailsButton: {
+    backgroundColor: '#EF6A46',
+    borderRadius: 24, // Fully rounded
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  viewDetailsText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  emptyCard: {
+    width: 280,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: '#9CA3AF',
+    fontStyle: 'italic',
   },
 });

@@ -16,91 +16,46 @@ interface TaskCardProps {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'completed': return '#10B981';
-    case 'in-progress': return '#F59E0B';
-    default: return '#6B7280';
+    default: return '#F59E0B'; // Pending default
   }
 };
 
-const getStatusIcon = (status: string) => {
+const getStatusLabel = (status: string) => {
   switch (status) {
-    case 'completed': return 'checkmark-circle';
-    case 'in-progress': return 'time';
-    default: return 'ellipse-outline';
+    case 'completed': return 'Completed';
+    default: return 'Pending';
   }
 };
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, category, priority, onPress, onComplete, onDelete }) => {
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
-  const statusColor = isOverdue ? '#EF4444' : getStatusColor(task.status);
+  const isCompleted = task.status === 'completed';
+  const statusColor = getStatusColor(task.status);
 
   return (
     <TouchableOpacity
-      style={[styles.card, { borderLeftColor: statusColor }]}
+      style={styles.card}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View style={styles.header}>
-        <View style={styles.leftSection}>
-          {onComplete && task.status !== 'completed' && (
-            <TouchableOpacity onPress={onComplete} style={styles.completeButton}>
-              <Ionicons name="ellipse-outline" size={24} color="#6B7280" />
-            </TouchableOpacity>
-          )}
-          {task.status === 'completed' && (
-            <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-          )}
-          <View style={styles.titleContainer}>
-            <Text style={[styles.title, task.status === 'completed' && styles.completedTitle]} numberOfLines={1}>
-              {task.title}
+      <View style={styles.contentContainer}>
+        <View style={styles.topRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {task.title}
+          </Text>
+          <View style={[styles.statusPill, { backgroundColor: isCompleted ? '#D1FAE5' : '#FEF3C7' }]}>
+            <Text style={[styles.statusText, { color: isCompleted ? '#10B981' : '#D97706' }]}>
+              {getStatusLabel(task.status)}
             </Text>
-            {task.description ? (
-              <Text style={styles.description} numberOfLines={1}>{task.description}</Text>
-            ) : null}
           </View>
         </View>
-        <View style={styles.rightSection}>
+
+        <View style={styles.bottomRow}>
           <View style={styles.amountContainer}>
             <Text style={styles.amount}>${task.amount.toFixed(2)}</Text>
           </View>
-          {onDelete && (
-            <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
-              <Ionicons name="trash-outline" size={18} color="#EF4444" />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.tags}>
-          {category && (
-            <View style={[styles.tag, { backgroundColor: category.color + '20' }]}>
-              <Text style={[styles.tagText, { color: category.color }]}>{category.name}</Text>
-            </View>
-          )}
-          {priority && (
-            <View style={[styles.tag, { backgroundColor: priority.color + '20' }]}>
-              <Text style={[styles.tagText, { color: priority.color }]}>{priority.name}</Text>
-            </View>
-          )}
-          <View style={[styles.tag, { backgroundColor: statusColor + '20' }]}>
-            <Ionicons name={getStatusIcon(task.status) as any} size={12} color={statusColor} />
-            <Text style={[styles.tagText, { color: statusColor, marginLeft: 4 }]}>
-              {task.status.replace('-', ' ')}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.dateContainer}>
-          {task.due_date && (
-            <View style={[styles.dateTag, isOverdue && styles.overdueTag]}>
-              <Ionicons name="calendar-outline" size={12} color={isOverdue ? '#EF4444' : '#6B7280'} />
-              <Text style={[styles.dateText, isOverdue && styles.overdueText]}>
-                {format(new Date(task.due_date), 'MMM d')}
-              </Text>
-            </View>
-          )}
-          <Text style={styles.timestamp}>
-            {format(new Date(task.created_at), 'MMM d, h:mm a')}
+          
+          <Text style={styles.dateText}>
+            {task.due_date ? format(new Date(task.due_date), 'MMM d, h:mm a') : format(new Date(task.created_at), 'MMM d')}
           </Text>
         </View>
       </View>
@@ -111,118 +66,60 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, category, priority, on
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 20, // More rounded like Image 8
     padding: 16,
     marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: 'transparent', // Prepare for active border if needed
   },
-  header: {
+  contentContainer: {
+    gap: 12,
+  },
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  leftSection: {
-    flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-  },
-  rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  completeButton: {
-    marginRight: 12,
-    padding: 2,
-  },
-  deleteButton: {
-    padding: 6,
-    backgroundColor: '#FEE2E2',
-    borderRadius: 8,
-  },
-  titleContainer: {
-    flex: 1,
-    marginLeft: 8,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937', // Dark text
+    flex: 1,
+    marginRight: 12,
   },
-  completedTitle: {
-    textDecorationLine: 'line-through',
-    color: '#9CA3AF',
-  },
-  description: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  amountContainer: {
-    backgroundColor: '#ECFDF5',
+  statusPill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  amountContainer: {
+    backgroundColor: '#EF6A46', // Orange pill for amount
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   amount: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#059669',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  tags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '500',
-    textTransform: 'capitalize',
-  },
-  dateContainer: {
-    alignItems: 'flex-end',
-  },
-  dateTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  overdueTag: {
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    color: '#FFFFFF',
   },
   dateText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#6B7280',
-  },
-  overdueText: {
-    color: '#EF4444',
     fontWeight: '500',
-  },
-  timestamp: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginTop: 4,
   },
 });

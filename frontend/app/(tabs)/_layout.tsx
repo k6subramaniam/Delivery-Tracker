@@ -11,18 +11,23 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#3B82F6',
+        tabBarActiveTintColor: '#EF6A46', // Orange from screenshots
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
-          borderTopColor: '#E5E7EB',
+          borderTopColor: 'transparent',
           paddingBottom: 8,
           paddingTop: 8,
-          height: 64,
+          height: 70,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
+          marginBottom: 4,
         },
       }}
     >
@@ -31,7 +36,7 @@ export default function TabsLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid" size={size} color={color} />
+            <Ionicons name="speedometer-outline" size={24} color={color} />
           ),
         }}
       />
@@ -40,7 +45,7 @@ export default function TabsLayout() {
         options={{
           title: 'Tasks',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" size={size} color={color} />
+            <Ionicons name="checkbox-outline" size={24} color={color} />
           ),
         }}
       />
@@ -50,7 +55,7 @@ export default function TabsLayout() {
           href: isAdmin ? undefined : null,
           title: 'Map',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map" size={size} color={color} />
+            <Ionicons name="location-outline" size={24} color={color} />
           ),
         }}
       />
@@ -59,7 +64,7 @@ export default function TabsLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
+            <Ionicons name="settings-outline" size={24} color={color} />
           ),
         }}
       />

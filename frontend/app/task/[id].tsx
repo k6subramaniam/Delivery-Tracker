@@ -39,7 +39,6 @@ export default function TaskDetailScreen() {
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('pending');
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -142,14 +141,14 @@ export default function TaskDetailScreen() {
   const getDriver = (driverId: string | null) => drivers.find(d => d.id === driverId);
 
   const statusOptions = [
-    { key: 'pending', label: 'Pending', color: '#6B7280' },
+    { key: 'pending', label: 'Pending', color: '#D97706' },
     { key: 'completed', label: 'Completed', color: '#10B981' },
   ];
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color="#EF6A46" />
       </View>
     );
   }
@@ -162,42 +161,32 @@ export default function TaskDetailScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <Text style={styles.headerActionText}>Cancel</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Task Details</Text>
+        <Text style={styles.headerTitle}>{isEditing ? 'Edit Task' : 'Task Details'}</Text>
         <View style={styles.headerActions}>
           {isEditing ? (
-            <>
-              <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.headerButton}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.headerButton}>
-                {saving ? (
-                  <ActivityIndicator size="small" color="#3B82F6" />
-                ) : (
-                  <Text style={styles.saveText}>Save</Text>
-                )}
-              </TouchableOpacity>
-            </>
+            <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.saveButton}>
+              {saving ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.saveButtonText}>Save Task</Text>
+              )}
+            </TouchableOpacity>
           ) : (
-            <>
-              <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.headerButton}>
-                <Ionicons name="pencil" size={20} color="#3B82F6" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleDelete} style={styles.headerButton}>
-                <Ionicons name="trash-outline" size={20} color="#EF4444" />
-              </TouchableOpacity>
-            </>
+            <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.headerButton}>
+              <Text style={[styles.headerActionText, { color: '#EF6A46' }]}>Edit</Text>
+            </TouchableOpacity>
           )}
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {isEditing ? (
-          // Edit Mode
+          // Edit Mode (Matching Create Task Style)
           <>
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Title *</Text>
+              <Text style={styles.label}>Title</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Enter task title"
@@ -221,34 +210,37 @@ export default function TaskDetailScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Amount ($) *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0.00"
-                placeholderTextColor="#9CA3AF"
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="decimal-pad"
-              />
+              <Text style={styles.label}>Amount</Text>
+              <View style={styles.amountInputContainer}>
+                <Text style={styles.currencyPrefix}>$</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  placeholder="0.00"
+                  placeholderTextColor="#9CA3AF"
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="decimal-pad"
+                />
+              </View>
             </View>
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Status</Text>
-              <View style={styles.statusOptions}>
+              <View style={styles.segmentedControl}>
                 {statusOptions.map(option => (
                   <TouchableOpacity
                     key={option.key}
                     style={[
-                      styles.statusOption,
-                      { borderColor: option.color },
-                      selectedStatus === option.key && { backgroundColor: option.color },
+                      styles.segmentButton,
+                      selectedStatus === option.key && styles.segmentButtonActive,
+                      selectedStatus === option.key && { backgroundColor: option.color + '20', borderColor: option.color }
                     ]}
                     onPress={() => setSelectedStatus(option.key)}
                   >
                     <Text
                       style={[
-                        styles.statusOptionText,
-                        { color: selectedStatus === option.key ? '#FFF' : option.color },
+                        styles.segmentText,
+                        selectedStatus === option.key && { color: option.color, fontWeight: '700' }
                       ]}
                     >
                       {option.label}
@@ -267,8 +259,7 @@ export default function TaskDetailScreen() {
                       key={cat.id}
                       style={[
                         styles.optionChip,
-                        { borderColor: cat.color },
-                        selectedCategory === cat.id && { backgroundColor: cat.color },
+                        selectedCategory === cat.id && { backgroundColor: '#EF6A46', borderColor: '#EF6A46' }
                       ]}
                       onPress={() => setSelectedCategory(
                         selectedCategory === cat.id ? null : cat.id
@@ -277,7 +268,7 @@ export default function TaskDetailScreen() {
                       <Text
                         style={[
                           styles.optionText,
-                          { color: selectedCategory === cat.id ? '#FFF' : cat.color },
+                          selectedCategory === cat.id && { color: '#FFF', fontWeight: '700' }
                         ]}
                       >
                         {cat.name}
@@ -297,8 +288,7 @@ export default function TaskDetailScreen() {
                       key={prio.id}
                       style={[
                         styles.optionChip,
-                        { borderColor: prio.color },
-                        selectedPriority === prio.id && { backgroundColor: prio.color },
+                        selectedPriority === prio.id && { backgroundColor: prio.color + '20', borderColor: prio.color }
                       ]}
                       onPress={() => setSelectedPriority(
                         selectedPriority === prio.id ? null : prio.id
@@ -307,7 +297,7 @@ export default function TaskDetailScreen() {
                       <Text
                         style={[
                           styles.optionText,
-                          { color: selectedPriority === prio.id ? '#FFF' : prio.color },
+                          selectedPriority === prio.id && { color: prio.color, fontWeight: '700' }
                         ]}
                       >
                         {prio.name}
@@ -328,17 +318,21 @@ export default function TaskDetailScreen() {
                         key={driver.id}
                         style={[
                           styles.optionChip,
-                          { borderColor: '#3B82F6' },
-                          selectedDriver === driver.id && { backgroundColor: '#3B82F6' },
+                          selectedDriver === driver.id && { backgroundColor: '#EF6A46', borderColor: '#EF6A46' },
                         ]}
                         onPress={() => setSelectedDriver(
                           selectedDriver === driver.id ? null : driver.id
                         )}
                       >
+                        <Ionicons
+                          name="person"
+                          size={14}
+                          color={selectedDriver === driver.id ? '#FFF' : '#EF6A46'}
+                        />
                         <Text
                           style={[
                             styles.optionText,
-                            { color: selectedDriver === driver.id ? '#FFF' : '#3B82F6' },
+                            selectedDriver === driver.id && { color: '#FFF', fontWeight: '700' },
                           ]}
                         >
                           {driver.name}
@@ -350,9 +344,13 @@ export default function TaskDetailScreen() {
               </View>
             )}
 
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+              <Text style={styles.deleteButtonText}>Delete Task</Text>
+            </TouchableOpacity>
+
           </>
         ) : (
-          // View Mode
+          // View Mode (Updated Style)
           <>
             <View style={styles.titleSection}>
               <Text style={styles.taskTitle}>{task.title}</Text>
@@ -366,17 +364,28 @@ export default function TaskDetailScreen() {
             ) : null}
 
             <View style={styles.tagsSection}>
+              <View style={[
+                styles.tag, 
+                { backgroundColor: task.status === 'completed' ? '#D1FAE5' : '#FEF3C7' }
+              ]}>
+                <Text style={[
+                  styles.tagText, 
+                  { color: task.status === 'completed' ? '#10B981' : '#D97706' }
+                ]}>
+                  {task.status === 'completed' ? 'Completed' : 'Pending'}
+                </Text>
+              </View>
+
               {getCategory(task.category_id) && (
-                <View style={[styles.tag, { backgroundColor: getCategory(task.category_id)!.color + '20' }]}>
-                  <View style={[styles.tagDot, { backgroundColor: getCategory(task.category_id)!.color }]} />
-                  <Text style={[styles.tagText, { color: getCategory(task.category_id)!.color }]}>
+                <View style={[styles.tag, { backgroundColor: '#F3F4F6' }]}>
+                  <Text style={[styles.tagText, { color: '#4B5563' }]}>
                     {getCategory(task.category_id)!.name}
                   </Text>
                 </View>
               )}
+              
               {getPriority(task.priority_id) && (
                 <View style={[styles.tag, { backgroundColor: getPriority(task.priority_id)!.color + '20' }]}>
-                  <View style={[styles.tagDot, { backgroundColor: getPriority(task.priority_id)!.color }]} />
                   <Text style={[styles.tagText, { color: getPriority(task.priority_id)!.color }]}>
                     {getPriority(task.priority_id)!.name}
                   </Text>
@@ -385,44 +394,10 @@ export default function TaskDetailScreen() {
             </View>
 
             <View style={styles.detailsCard}>
-              <View style={styles.detailRow}>
-                <View style={styles.detailIcon}>
-                  <Ionicons name="flag" size={20} color="#6B7280" />
-                </View>
-                <View style={styles.detailContent}>
-                  <Text style={styles.detailLabel}>Status</Text>
-                  <View style={[
-                    styles.statusBadge,
-                    { backgroundColor: statusOptions.find(s => s.key === task.status)?.color + '20' }
-                  ]}>
-                    <Text style={[
-                      styles.statusBadgeText,
-                      { color: statusOptions.find(s => s.key === task.status)?.color }
-                    ]}>
-                      {task.status.replace('-', ' ')}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {task.due_date && (
-                <View style={styles.detailRow}>
-                  <View style={styles.detailIcon}>
-                    <Ionicons name="calendar" size={20} color="#6B7280" />
-                  </View>
-                  <View style={styles.detailContent}>
-                    <Text style={styles.detailLabel}>Due Date</Text>
-                    <Text style={styles.detailValue}>
-                      {format(new Date(task.due_date), 'MMMM d, yyyy')}
-                    </Text>
-                  </View>
-                </View>
-              )}
-
               {isAdmin && getDriver(task.assigned_driver_id) && (
                 <View style={styles.detailRow}>
                   <View style={styles.detailIcon}>
-                    <Ionicons name="person" size={20} color="#6B7280" />
+                    <Ionicons name="person" size={20} color="#EF6A46" />
                   </View>
                   <View style={styles.detailContent}>
                     <Text style={styles.detailLabel}>Assigned Driver</Text>
@@ -435,10 +410,10 @@ export default function TaskDetailScreen() {
 
               <View style={styles.detailRow}>
                 <View style={styles.detailIcon}>
-                  <Ionicons name="time" size={20} color="#6B7280" />
+                  <Ionicons name="time" size={20} color="#EF6A46" />
                 </View>
                 <View style={styles.detailContent}>
-                  <Text style={styles.detailLabel}>Created</Text>
+                  <Text style={styles.detailLabel}>Created On</Text>
                   <Text style={styles.detailValue}>
                     {format(new Date(task.created_at), 'MMM d, yyyy h:mm a')}
                   </Text>
@@ -451,7 +426,7 @@ export default function TaskDetailScreen() {
                     <Ionicons name="checkmark-circle" size={20} color="#10B981" />
                   </View>
                   <View style={styles.detailContent}>
-                    <Text style={styles.detailLabel}>Completed</Text>
+                    <Text style={styles.detailLabel}>Completed On</Text>
                     <Text style={[styles.detailValue, { color: '#10B981' }]}>
                       {format(new Date(task.completed_at), 'MMM d, yyyy h:mm a')}
                     </Text>
@@ -462,7 +437,6 @@ export default function TaskDetailScreen() {
 
             {task.status !== 'completed' && (
               <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
-                <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
                 <Text style={styles.completeButtonText}>Mark as Completed</Text>
               </TouchableOpacity>
             )}
@@ -476,59 +450,62 @@ export default function TaskDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF9F0',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF9F0',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   backButton: {
     padding: 4,
   },
+  headerActionText: {
+    fontSize: 16,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
   headerTitle: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginLeft: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#EF6A46',
   },
   headerActions: {
     flexDirection: 'row',
     gap: 8,
   },
   headerButton: {
-    padding: 8,
+    padding: 4,
   },
-  cancelText: {
-    fontSize: 16,
-    color: '#6B7280',
+  saveButton: {
+    backgroundColor: '#EF6A46',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
-  saveText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3B82F6',
+  saveButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   content: {
-    padding: 16,
+    padding: 20,
   },
   formGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#9CA3AF',
     marginBottom: 8,
   },
   input: {
@@ -539,29 +516,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1F2937',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#EF6A46',
   },
   textArea: {
-    height: 100,
+    height: 120,
     textAlignVertical: 'top',
   },
-  statusOptions: {
+  amountInputContainer: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  statusOption: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EF6A46',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1.5,
   },
-  statusOptionText: {
+  currencyPrefix: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginRight: 4,
+  },
+  amountInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 4,
+  },
+  segmentButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  segmentButtonActive: {
+    backgroundColor: '#FFF7ED',
+  },
+  segmentText: {
     fontSize: 14,
+    color: '#6B7280',
     fontWeight: '500',
   },
   optionsRow: {
     flexDirection: 'row',
     gap: 8,
+    padding: 8,
   },
   optionChip: {
     flexDirection: 'row',
@@ -569,13 +578,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    borderWidth: 1.5,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
     gap: 6,
   },
   optionText: {
     fontSize: 14,
     fontWeight: '500',
+    color: '#6B7280',
   },
+  
+  // View Mode Styles
   titleSection: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -584,56 +598,53 @@ const styles = StyleSheet.create({
   },
   taskTitle: {
     flex: 1,
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '800',
     color: '#1F2937',
     marginRight: 12,
   },
   amountBadge: {
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 14,
+    backgroundColor: '#EF6A46',
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 16,
   },
   amountText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#059669',
+    color: '#FFFFFF',
   },
   description: {
     fontSize: 16,
     color: '#6B7280',
     lineHeight: 24,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   tagsSection: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  tagDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    borderRadius: 12,
   },
   tagText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
   },
   detailsCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   detailRow: {
     flexDirection: 'row',
@@ -645,48 +656,53 @@ const styles = StyleSheet.create({
   detailIcon: {
     width: 40,
     height: 40,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    backgroundColor: '#FFF7ED',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   detailContent: {
     flex: 1,
   },
   detailLabel: {
     fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 2,
+    color: '#9CA3AF',
+    marginBottom: 4,
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
   detailValue: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#1F2937',
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  completeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#10B981',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  completeButtonText: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#1F2937',
+  },
+  completeButton: {
+    backgroundColor: '#EF6A46',
+    paddingVertical: 18,
+    borderRadius: 28,
+    alignItems: 'center',
+    shadowColor: '#EF6A46',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  completeButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
     color: '#FFFFFF',
+  },
+  deleteButton: {
+    marginTop: 32,
+    backgroundColor: '#FEE2E2',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: '#EF4444',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });

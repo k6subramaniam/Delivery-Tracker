@@ -36,13 +36,13 @@ export default function SettingsScreen() {
 
   // Form states
   const [categoryName, setCategoryName] = useState('');
-  const [categoryColor, setCategoryColor] = useState('#3B82F6');
+  const [categoryColor, setCategoryColor] = useState('#EF6A46');
   const [priorityName, setPriorityName] = useState('');
   const [priorityLevel, setPriorityLevel] = useState('3');
   const [priorityColor, setPriorityColor] = useState('#EF4444');
   const [saving, setSaving] = useState(false);
 
-  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#6B7280'];
+  const colors = ['#EF6A46', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#6B7280'];
 
   useEffect(() => {
     loadData();
@@ -126,7 +126,7 @@ export default function SettingsScreen() {
     } else {
       setEditingCategory(null);
       setCategoryName('');
-      setCategoryColor('#3B82F6');
+      setCategoryColor('#EF6A46');
     }
     setShowCategoryModal(true);
   };
@@ -268,127 +268,148 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Profile Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Profile</Text>
-          <View style={styles.profileCard}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.name?.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{user?.name}</Text>
-              <Text style={styles.profileEmail}>{user?.email}</Text>
-              <View style={styles.roleTag}>
-                <Ionicons
-                  name={user?.role === 'admin' ? 'shield-checkmark' : 'car'}
-                  size={12}
-                  color="#3B82F6"
-                />
-                <Text style={styles.roleText}>{user?.role}</Text>
-              </View>
-            </View>
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {user?.name?.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{user?.name}</Text>
+            <Text style={styles.profileRole}>
+              {user?.role === 'admin' ? 'Administrator' : 'Delivery Driver'} | {user?.email}
+            </Text>
           </View>
         </View>
 
-        {/* Location Sharing (Drivers only) */}
-        {isDriver && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Location Sharing</Text>
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <Ionicons name="location" size={24} color="#3B82F6" />
-                <View style={styles.settingText}>
-                  <Text style={styles.settingLabel}>Share Location</Text>
-                  <Text style={styles.settingDesc}>Status: {locationStatus}</Text>
-                </View>
-              </View>
-              <Switch
-                value={locationEnabled}
-                onValueChange={toggleLocation}
-                trackColor={{ false: '#E5E7EB', true: '#93C5FD' }}
-                thumbColor={locationEnabled ? '#3B82F6' : '#9CA3AF'}
-              />
+        {/* Menu Items Card */}
+        <View style={styles.menuCard}>
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="person-outline" size={20} color="#EF6A46" />
             </View>
-            {locationEnabled && (
-              <TouchableOpacity
-                style={styles.updateLocationButton}
-                onPress={startLocationUpdates}
-              >
-                <Ionicons name="refresh" size={18} color="#3B82F6" />
-                <Text style={styles.updateLocationText}>Update Location Now</Text>
-              </TouchableOpacity>
-            )}
+            <Text style={styles.menuText}>Account</Text>
+            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
+          <View style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="notifications-outline" size={20} color="#EF6A46" />
+            </View>
+            <Text style={styles.menuText}>Notifications</Text>
+            <Switch
+              trackColor={{ false: '#E5E7EB', true: '#EF6A46' }}
+              thumbColor={'#FFFFFF'}
+              ios_backgroundColor="#E5E7EB"
+              value={true}
+            />
+          </View>
+
+          <View style={styles.menuDivider} />
+
+          {isDriver && (
+            <>
+              <View style={styles.menuItem}>
+                <View style={styles.menuIconContainer}>
+                  <Ionicons name="location-outline" size={20} color="#EF6A46" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.menuText}>Share Location</Text>
+                  <Text style={styles.menuSubtext}>{locationStatus}</Text>
+                </View>
+                <Switch
+                  value={locationEnabled}
+                  onValueChange={toggleLocation}
+                  trackColor={{ false: '#E5E7EB', true: '#EF6A46' }}
+                  thumbColor={'#FFFFFF'}
+                />
+              </View>
+              <View style={styles.menuDivider} />
+            </>
+          )}
+
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="shield-checkmark-outline" size={20} color="#EF6A46" />
+            </View>
+            <Text style={styles.menuText}>Privacy & Security</Text>
+            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="help-circle-outline" size={20} color="#EF6A46" />
+            </View>
+            <Text style={styles.menuText}>Help & Support</Text>
+            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          </TouchableOpacity>
+
+          {/* Categories & Priorities (Admin Tools moved here visually or kept?) 
+              Let's keep them as extra menu items for functionality but styled like the rest 
+          */}
+          
+          <View style={styles.menuDivider} />
+          
+          <TouchableOpacity style={styles.menuItem} onPress={() => openCategoryModal()}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="pricetags-outline" size={20} color="#EF6A46" />
+            </View>
+            <Text style={styles.menuText}>Manage Categories</Text>
+            <Ionicons name="add-circle-outline" size={20} color="#EF6A46" />
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => openPriorityModal()}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="flag-outline" size={20} color="#EF6A46" />
+            </View>
+            <Text style={styles.menuText}>Manage Priorities</Text>
+            <Ionicons name="add-circle-outline" size={20} color="#EF6A46" />
+          </TouchableOpacity>
+
+          <View style={styles.logoutContainer}>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutText}>Log Out</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Existing Categories List (Hidden/Refactored or kept for management?)
+            Let's render them in a simple list below for management if needed, 
+            or assume the modal handles it. Let's keep a simplified list below. 
+        */}
+        {(categories.length > 0 || priorities.length > 0) && (
+          <View style={styles.configSection}>
+            <Text style={styles.configTitle}>Configuration Data</Text>
+            <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Categories:</Text>
+              <View style={styles.configChips}>
+                {categories.map(c => (
+                  <TouchableOpacity key={c.id} style={[styles.miniChip, { backgroundColor: c.color }]} onPress={() => openCategoryModal(c)}>
+                    <Text style={styles.miniChipText}>{c.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Priorities:</Text>
+              <View style={styles.configChips}>
+                {priorities.map(p => (
+                  <TouchableOpacity key={p.id} style={[styles.miniChip, { backgroundColor: p.color }]} onPress={() => openPriorityModal(p)}>
+                    <Text style={styles.miniChipText}>{p.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
           </View>
         )}
 
-        {/* Categories */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Categories</Text>
-            <TouchableOpacity
-              style={styles.addSectionButton}
-              onPress={() => openCategoryModal()}
-            >
-              <Ionicons name="add" size={20} color="#3B82F6" />
-            </TouchableOpacity>
-          </View>
-          {categories.length === 0 ? (
-            <Text style={styles.emptyText}>No categories yet</Text>
-          ) : (
-            categories.map((cat) => (
-              <View key={cat.id} style={styles.itemRow}>
-                <View style={[styles.colorDot, { backgroundColor: cat.color }]} />
-                <Text style={styles.itemName}>{cat.name}</Text>
-                <TouchableOpacity onPress={() => openCategoryModal(cat)}>
-                  <Ionicons name="pencil" size={18} color="#6B7280" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => deleteCategory(cat.id)}>
-                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
-
-        {/* Priorities */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Priorities</Text>
-            <TouchableOpacity
-              style={styles.addSectionButton}
-              onPress={() => openPriorityModal()}
-            >
-              <Ionicons name="add" size={20} color="#3B82F6" />
-            </TouchableOpacity>
-          </View>
-          {priorities.length === 0 ? (
-            <Text style={styles.emptyText}>No priorities yet</Text>
-          ) : (
-            priorities.map((prio) => (
-              <View key={prio.id} style={styles.itemRow}>
-                <View style={[styles.colorDot, { backgroundColor: prio.color }]} />
-                <Text style={styles.itemName}>{prio.name}</Text>
-                <View style={styles.levelBadge}>
-                  <Text style={styles.levelText}>L{prio.level}</Text>
-                </View>
-                <TouchableOpacity onPress={() => openPriorityModal(prio)}>
-                  <Ionicons name="pencil" size={18} color="#6B7280" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => deletePriority(prio.id)}>
-                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
-
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
       </ScrollView>
 
       {/* Category Modal */}
@@ -408,7 +429,7 @@ export default function SettingsScreen() {
             </Text>
             <TouchableOpacity onPress={saveCategory} disabled={saving}>
               {saving ? (
-                <ActivityIndicator size="small" color="#3B82F6" />
+                <ActivityIndicator size="small" color="#EF6A46" />
               ) : (
                 <Text style={styles.saveText}>Save</Text>
               )}
@@ -441,6 +462,11 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+            {editingCategory && (
+              <TouchableOpacity style={styles.deleteButton} onPress={() => deleteCategory(editingCategory.id)}>
+                <Text style={styles.deleteButtonText}>Delete Category</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </SafeAreaView>
       </Modal>
@@ -462,7 +488,7 @@ export default function SettingsScreen() {
             </Text>
             <TouchableOpacity onPress={savePriority} disabled={saving}>
               {saving ? (
-                <ActivityIndicator size="small" color="#3B82F6" />
+                <ActivityIndicator size="small" color="#EF6A46" />
               ) : (
                 <Text style={styles.saveText}>Save</Text>
               )}
@@ -504,6 +530,11 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+            {editingPriority && (
+              <TouchableOpacity style={styles.deleteButton} onPress={() => deletePriority(editingPriority.id)}>
+                <Text style={styles.deleteButtonText}>Delete Priority</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </SafeAreaView>
       </Modal>
@@ -514,55 +545,44 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF9F0', // Creamy bg
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#3E2D2B', // Dark brown
   },
   content: {
-    padding: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
-  },
-  addSectionButton: {
-    padding: 4,
-    marginBottom: 12,
+    padding: 20,
   },
   profileCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
+    marginBottom: 24,
+    shadowColor: '#EF6A46',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#3B82F6',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EF6A46',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -571,152 +591,142 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#3E2D2B',
+  },
+  profileRole: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  menuCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 24,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  menuIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  menuText: {
+    flex: 1,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
   },
-  profileEmail: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  roleTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    gap: 4,
-  },
-  roleText: {
+  menuSubtext: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#3B82F6',
-    textTransform: 'capitalize',
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-  },
-  settingInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  settingText: {
-    marginLeft: 12,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1F2937',
-  },
-  settingDesc: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  updateLocationButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EFF6FF',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-    gap: 8,
-  },
-  updateLocationText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#3B82F6',
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    gap: 12,
-  },
-  colorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  itemName: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1F2937',
-  },
-  levelBadge: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  levelText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  emptyText: {
-    fontSize: 14,
     color: '#9CA3AF',
-    fontStyle: 'italic',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginLeft: 72, // Align with text
+  },
+  logoutContainer: {
+    padding: 20,
+    paddingTop: 24,
   },
   logoutButton: {
-    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#EF6A46',
+    borderRadius: 28,
+    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FEE2E2',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-    marginTop: 8,
   },
   logoutText: {
+    color: '#EF6A46',
     fontSize: 16,
-    fontWeight: '600',
-    color: '#EF4444',
+    fontWeight: '700',
   },
+  
+  // Config section (mini styling)
+  configSection: {
+    marginBottom: 20,
+  },
+  configTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+  },
+  configRow: {
+    marginBottom: 12,
+  },
+  configLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginBottom: 8,
+  },
+  configChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  miniChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  miniChipText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // Modal Styles
   modalContainer: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF9F0',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   cancelText: {
     fontSize: 16,
     color: '#6B7280',
   },
   modalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#1F2937',
   },
   saveText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#3B82F6',
+    fontWeight: '700',
+    color: '#EF6A46',
   },
   modalContent: {
-    padding: 16,
+    padding: 20,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#9CA3AF',
     marginBottom: 8,
     marginTop: 16,
   },
@@ -750,5 +760,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+  },
+  deleteButton: {
+    marginTop: 32,
+    backgroundColor: '#FEE2E2',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: '#EF4444',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });

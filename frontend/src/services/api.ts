@@ -45,6 +45,7 @@ export const messagesAPI = {
   getConversation: (otherUserId: string) => api.get(`/messages/conversation/${otherUserId}`),
   getConversations: () => api.get('/messages/conversations'),
   getUnreadCount: () => api.get('/notifications/unread-count'),
+  clearConversation: (otherUserId: string) => api.delete(`/messages/conversation/${otherUserId}`),
 };
 
 // Admin API

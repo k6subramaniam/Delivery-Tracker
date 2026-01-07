@@ -17,7 +17,7 @@ import { StatCard } from '../../src/components/StatCard';
 import { TaskCard } from '../../src/components/TaskCard';
 import { DashboardStats, Task, Category, Priority } from '../../src/types';
 import { categoriesAPI, prioritiesAPI } from '../../src/services/api';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 import { useTheme } from '../../src/context/ThemeContext';
 
@@ -92,9 +92,13 @@ export default function DashboardScreen() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      const interval = setInterval(loadData, 30000);
+      return () => clearInterval(interval);
+    }, [user])
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

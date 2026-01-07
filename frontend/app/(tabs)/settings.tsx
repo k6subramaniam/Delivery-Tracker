@@ -41,25 +41,43 @@ export default function SettingsScreen() {
   }, [isDriver, locationEnabled]);
 
   const resetAllData = async () => {
-    Alert.alert(
-      'Reset All Data',
-      'Are you sure you want to delete ALL data? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Everything',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await adminAPI.resetData();
-              Alert.alert('Success', 'All data has been reset.');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to reset data');
-            }
+    const performReset = async () => {
+      try {
+        await adminAPI.resetData();
+        if (Platform.OS === 'web') {
+          window.alert('All data has been reset.');
+        } else {
+          Alert.alert('Success', 'All data has been reset.');
+        }
+      } catch (error) {
+        const msg = 'Failed to reset data';
+        if (Platform.OS === 'web') {
+          window.alert(msg);
+        } else {
+          Alert.alert('Error', msg);
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirm = window.confirm('Are you sure you want to delete ALL data? This cannot be undone.');
+      if (confirm) {
+        performReset();
+      }
+    } else {
+      Alert.alert(
+        'Reset All Data',
+        'Are you sure you want to delete ALL data? This cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete Everything',
+            style: 'destructive',
+            onPress: performReset,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const checkLocationPermission = async () => {

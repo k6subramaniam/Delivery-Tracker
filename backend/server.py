@@ -143,6 +143,12 @@ class DriverLocationResponse(BaseModel):
     longitude: float
     timestamp: datetime
 
+class DriverEarnings(BaseModel):
+    driver_id: str
+    driver_name: str
+    total_earnings: float
+    task_count: int
+
 # ===================== AUTH HELPERS =====================
 
 def hash_password(password: str) -> str:
@@ -523,6 +529,29 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "total_earnings": total_earnings,
         "driver_count": driver_count
     }
+
+@api_router.get("/dashboard/admin/driver-payments", response_model=List[DriverEarnings])
+async def get_driver_payments(current_user: dict = Depends(get_admin_user)):
+    pipeline = [
+        {"$match": {"status": "completed", "assigned_driver_id": {"$ne": None}}},
+        {"$group": {"_id": "$assigned_driver_id", "total_earnings": {"$sum": "$amount"}, "task_count": {"$sum": 1}}}
+    ]
+    results = await db.tasks.aggregate(pipeline).to_list(100)
+    
+    response = []
+    for res in results:
+        driver_id = res["_id"]
+        driver = await db.users.find_one({"id": driver_id})
+        driver_name = driver["name"] if driver else "Unknown Driver"
+        
+        response.append(DriverEarnings(
+            driver_id=driver_id,
+            driver_name=driver_name,
+            total_earnings=res["total_earnings"],
+            task_count=res["task_count"]
+        ))
+        
+    return response
 
 # ===================== ROOT ROUTE =====================
 

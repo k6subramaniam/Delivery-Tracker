@@ -94,14 +94,47 @@ class MockCollection:
     async def aggregate(self, pipeline):
         match_stage = next((s for s in pipeline if "$match" in s), None)
         group_stage = next((s for s in pipeline if "$group" in s), None)
+        lookup_stage = next((s for s in pipeline if "$lookup" in s), None)
         
         filtered = self.documents
         if match_stage:
             filtered = [d for d in self.documents if self._matches(d, match_stage["$match"])]
             
         if group_stage:
-             total = sum(d.get("amount", 0) for d in filtered)
-             return MockCursor([{"total": total}])
+             group_config = group_stage["$group"]
+             group_id = group_config.get("_id")
+             
+             if group_id is None:
+                 # Group all into one
+                 total = sum(d.get("amount", 0) for d in filtered)
+                 return MockCursor([{"total": total}])
+             elif isinstance(group_id, str) and group_id.startswith("$"):
+                 # Group by field
+                 field = group_id[1:]
+                 groups = {}
+                 for doc in filtered:
+                     key = doc.get(field)
+                     if key not in groups:
+                         groups[key] = {"_id": key}
+                         # Initialize accumulators
+                         for k, v in group_config.items():
+                             if k == "_id": continue
+                             if isinstance(v, dict):
+                                 if "$sum" in v:
+                                     groups[key][k] = 0
+                     
+                     # Update accumulators
+                     for k, v in group_config.items():
+                         if k == "_id": continue
+                         if isinstance(v, dict):
+                             if "$sum" in v:
+                                 val = v["$sum"]
+                                 if val == 1:
+                                     groups[key][k] += 1
+                                 elif isinstance(val, str) and val.startswith("$"):
+                                     groups[key][k] += doc.get(val[1:], 0)
+                 
+                 return MockCursor(list(groups.values()))
         
         return MockCursor([])
 

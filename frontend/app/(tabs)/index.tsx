@@ -18,11 +18,23 @@ import { DashboardStats, Task, Category, Priority } from '../../src/types';
 import { categoriesAPI, prioritiesAPI } from '../../src/services/api';
 import { useRouter } from 'expo-router';
 
+// Define type for driver earnings
+interface DriverEarnings {
+  driver_id: string;
+  driver_name: string;
+  total_earnings: number;
+  task_count: number;
+}
+
 export default function DashboardScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const isAdmin = user?.role === 'admin';
+  const isDriver = user?.role === 'driver';
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+  const [driverEarnings, setDriverEarnings] = useState<DriverEarnings[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,16 +42,42 @@ export default function DashboardScreen() {
 
   const loadData = async () => {
     try {
-      const [statsRes, tasksRes, catsRes, priosRes] = await Promise.all([
+      const promises: Promise<any>[] = [
         dashboardAPI.getStats(),
-        tasksAPI.getAll(),
         categoriesAPI.getAll(),
         prioritiesAPI.getAll(),
-      ]);
+      ];
+
+      // Different data fetching based on role
+      if (isAdmin) {
+        // Admins see all tasks (we'll fetch recent tasks for context, but mainly focus on driver payments)
+        promises.push(tasksAPI.getAll());
+        // Add driver payments fetch
+        promises.push(dashboardAPI.getDriverPayments());
+      } else {
+        // Drivers see only their COMPLETED tasks as "owed payments"
+        promises.push(tasksAPI.getAll({ status: 'completed' }));
+      }
+
+      const results = await Promise.all(promises);
+      
+      const statsRes = results[0];
+      const catsRes = results[1];
+      const priosRes = results[2];
+      
       setStats(statsRes.data);
-      setRecentTasks(tasksRes.data.slice(0, 5));
       setCategories(catsRes.data);
       setPriorities(priosRes.data);
+
+      if (isAdmin) {
+        // results[3] is tasks, results[4] is driver earnings
+        setRecentTasks(results[3].data.slice(0, 5));
+        setDriverEarnings(results[4].data);
+      } else {
+        // results[3] is filtered tasks
+        setRecentTasks(results[3].data.slice(0, 5)); // Show recent 5 completed
+      }
+
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -93,7 +131,7 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.roleTag}>
             <Ionicons 
-              name={user?.role === 'admin' ? 'shield-checkmark' : 'car'} 
+              name={isAdmin ? 'shield-checkmark' : 'car'} 
               size={16} 
               color="#3B82F6" 
             />
@@ -102,6 +140,7 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.statsGrid}>
+          {/* ... existing stats grid ... */}
           <View style={styles.statsRow}>
             <View style={styles.statHalf}>
               <StatCard
@@ -139,13 +178,13 @@ export default function DashboardScreen() {
             </View>
           </View>
           <StatCard
-            title="Total Earnings"
+            title={isDriver ? "Total Earnings" : "Total Paid Out"}
             value={`$${(stats?.total_earnings || 0).toFixed(2)}`}
             icon="cash"
             color="#059669"
             subtitle="From completed deliveries"
           />
-          {user?.role === 'admin' && (
+          {isAdmin && (
             <StatCard
               title="Active Drivers"
               value={stats?.driver_count || 0}
@@ -157,28 +196,58 @@ export default function DashboardScreen() {
 
         <View style={styles.recentSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Tasks</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/tasks')}>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>
+              {isAdmin ? 'Drivers Owed Payments' : 'Recent Earnings (Owed Payments)'}
+            </Text>
+            {isDriver && (
+              <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/tasks', params: { filter: 'completed' } })}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {recentTasks.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="clipboard-outline" size={48} color="#D1D5DB" />
-              <Text style={styles.emptyText}>No tasks yet</Text>
-            </View>
+          {isAdmin ? (
+            // Admin View: List of Drivers and their earnings
+            driverEarnings.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="cash-outline" size={48} color="#D1D5DB" />
+                <Text style={styles.emptyText}>No pending payments for drivers</Text>
+              </View>
+            ) : (
+              driverEarnings.map(earning => (
+                <View key={earning.driver_id} style={styles.earningCard}>
+                  <View style={styles.earningInfo}>
+                    <View style={styles.earningIcon}>
+                      <Ionicons name="person" size={20} color="#3B82F6" />
+                    </View>
+                    <View>
+                      <Text style={styles.earningName}>{earning.driver_name}</Text>
+                      <Text style={styles.earningSubtext}>{earning.task_count} completed tasks</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.earningAmount}>${earning.total_earnings.toFixed(2)}</Text>
+                </View>
+              ))
+            )
           ) : (
-            recentTasks.map(task => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                category={getCategory(task.category_id)}
-                priority={getPriority(task.priority_id)}
-                onPress={() => router.push(`/task/${task.id}`)}
-                onComplete={() => handleCompleteTask(task.id)}
-              />
-            ))
+            // Driver View: List of Completed Tasks
+            recentTasks.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="wallet-outline" size={48} color="#D1D5DB" />
+                <Text style={styles.emptyText}>No completed tasks yet</Text>
+              </View>
+            ) : (
+              recentTasks.map(task => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  category={getCategory(task.category_id)}
+                  priority={getPriority(task.priority_id)}
+                  onPress={() => router.push(`/task/${task.id}`)}
+                  // Don't show complete/delete actions here as it's a history view
+                />
+              ))
+            )
           )}
         </View>
       </ScrollView>
@@ -270,5 +339,48 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: '#9CA3AF',
+  },
+  earningCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  earningInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  earningIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  earningName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  earningSubtext: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  earningAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#059669',
   },
 });

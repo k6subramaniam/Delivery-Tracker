@@ -585,21 +585,20 @@ async def get_driver_payments(current_user: dict = Depends(get_admin_user)):
         tasks = await db.tasks.find(query).to_list(1000)
         
         completed_tasks = [t for t in tasks if t.get("status") == "completed"]
-        pending_tasks = [t for t in tasks if t.get("status") == "pending"]
+        pending_tasks = [t for t in tasks if t.get("status") != "completed"]
         
         total_earnings = sum(t.get("amount", 0) for t in completed_tasks)
         pending_amount = sum(t.get("amount", 0) for t in pending_tasks)
         
-        # Only include if they have any activity
-        if tasks:
-            response.append(DriverEarnings(
-                driver_id=driver_id,
-                driver_name=driver["name"],
-                total_earnings=total_earnings,
-                task_count=len(completed_tasks),
-                pending_amount=pending_amount,
-                pending_count=len(pending_tasks)
-            ))
+        # Always include the driver, even if no tasks, so Admin can see them
+        response.append(DriverEarnings(
+            driver_id=driver_id,
+            driver_name=driver["name"],
+            total_earnings=total_earnings,
+            task_count=len(completed_tasks),
+            pending_amount=pending_amount,
+            pending_count=len(pending_tasks)
+        ))
         
     return response
 

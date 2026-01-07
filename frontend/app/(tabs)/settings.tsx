@@ -14,14 +14,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../src/context/AuthContext';
-import { categoriesAPI, prioritiesAPI, locationAPI } from '../../src/services/api';
-import { Category, Priority } from '../../src/types';
-import * as Location from 'expo-location';
+import { useTheme } from '../../src/context/ThemeContext';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme, colors } = useTheme();
   const isDriver = user?.role === 'driver';
+
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
@@ -305,49 +304,49 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: colors.headerText }]}>Settings</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Profile Card */}
-        <View style={styles.profileCard}>
+        <View style={[styles.profileCard, { backgroundColor: colors.card, shadowColor: theme === 'dark' ? '#000' : '#EF6A46' }]}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
               {user?.name?.charAt(0).toUpperCase()}
             </Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.name}</Text>
-            <Text style={styles.profileRole}>
+            <Text style={[styles.profileName, { color: colors.text }]}>{user?.name}</Text>
+            <Text style={[styles.profileRole, { color: colors.textSecondary }]}>
               {user?.role === 'admin' ? 'Administrator' : 'Delivery Driver'} | {user?.email}
             </Text>
           </View>
         </View>
 
         {/* Menu Items Card */}
-        <View style={styles.menuCard}>
+        <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
           <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuIconContainer}>
+            <View style={[styles.menuIconContainer, { backgroundColor: theme === 'dark' ? '#333' : '#FFF7ED' }]}>
               <Ionicons name="person-outline" size={20} color="#EF6A46" />
             </View>
-            <Text style={styles.menuText}>Account</Text>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <Text style={[styles.menuText, { color: colors.text }]}>Account</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <View style={styles.menuDivider} />
 
           <View style={styles.menuItem}>
-            <View style={styles.menuIconContainer}>
-              <Ionicons name="notifications-outline" size={20} color="#EF6A46" />
+            <View style={[styles.menuIconContainer, { backgroundColor: theme === 'dark' ? '#333' : '#FFF7ED' }]}>
+              <Ionicons name="moon-outline" size={20} color="#EF6A46" />
             </View>
-            <Text style={styles.menuText}>Notifications</Text>
+            <Text style={[styles.menuText, { color: colors.text }]}>Dark Mode</Text>
             <Switch
+              value={theme === 'dark'}
+              onValueChange={toggleTheme}
               trackColor={{ false: '#E5E7EB', true: '#EF6A46' }}
               thumbColor={'#FFFFFF'}
-              ios_backgroundColor="#E5E7EB"
-              value={true}
             />
           </View>
 

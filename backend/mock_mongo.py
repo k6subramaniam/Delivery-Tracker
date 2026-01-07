@@ -67,17 +67,16 @@ class MockCollection:
             return doc
         return None
 
-    async def delete_one(self, query):
-        doc = await self.find_one(query)
-        if doc:
-            self.documents.remove(doc)
-            self.db._save()
-            class Result:
-                deleted_count = 1
-            return Result()
+    async def delete_many(self, query):
+        initial_count = len(self.documents)
+        self.documents = [doc for doc in self.documents if not self._matches(doc, query)]
+        deleted_count = initial_count - len(self.documents)
+        self.db._save()
         class Result:
-            deleted_count = 0
-        return Result()
+            pass
+        result = Result()
+        result.deleted_count = deleted_count
+        return result
 
     async def count_documents(self, query):
         count = 0

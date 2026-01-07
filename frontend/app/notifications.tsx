@@ -12,9 +12,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../src/context/ThemeContext';
-import { messagesAPI } from '../../src/services/api';
-import { Conversation } from '../../src/types';
+import { useTheme } from '../src/context/ThemeContext';
+import { messagesAPI } from '../src/services/api';
+import { Conversation } from '../src/types';
 import { format } from 'date-fns';
 
 export default function NotificationsScreen() {

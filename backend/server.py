@@ -541,7 +541,8 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
             {"$match": {**query, "status": "completed"}},
             {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
         ]
-        result = await db.tasks.aggregate(pipeline).to_list(1)
+        cursor = await db.tasks.aggregate(pipeline)
+        result = await cursor.to_list(1)
         total_earnings = result[0]["total"] if result else 0
         
         # Get overdue tasks

@@ -15,12 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/services/api';
 import { Task, Category, Priority, User } from '../../src/types';
 import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/context/ThemeContext';
 import { format } from 'date-fns';
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { colors, theme } = useTheme();
   const isAdmin = user?.role === 'admin';
 
   const [task, setTask] = useState<Task | null>(null);
@@ -147,8 +149,8 @@ export default function TaskDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#EF6A46" />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -158,15 +160,15 @@ export default function TaskDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.headerActionText}>Cancel</Text>
+          <Text style={[styles.headerActionText, { color: colors.textSecondary }]}>Cancel</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{isEditing ? 'Edit Task' : 'Task Details'}</Text>
+        <Text style={[styles.headerTitle, { color: colors.headerText }]}>{isEditing ? 'Edit Task' : 'Task Details'}</Text>
         <View style={styles.headerActions}>
           {isEditing ? (
-            <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.saveButton}>
+            <TouchableOpacity onPress={handleSave} disabled={saving} style={[styles.saveButton, { backgroundColor: colors.primary }]}>
               {saving ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
@@ -175,7 +177,7 @@ export default function TaskDetailScreen() {
             </TouchableOpacity>
           ) : (
             <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.headerButton}>
-              <Text style={[styles.headerActionText, { color: '#EF6A46' }]}>Edit</Text>
+              <Text style={[styles.headerActionText, { color: colors.primary }]}>Edit</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -186,22 +188,22 @@ export default function TaskDetailScreen() {
           // Edit Mode (Matching Create Task Style)
           <>
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Title</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Title</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.primary }]}
                 placeholder="Enter task title"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textSecondary}
                 value={title}
                 onChangeText={setTitle}
               />
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Description</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Description</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                 placeholder="Enter description"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textSecondary}
                 value={description}
                 onChangeText={setDescription}
                 multiline
@@ -210,13 +212,13 @@ export default function TaskDetailScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Amount</Text>
-              <View style={styles.amountInputContainer}>
-                <Text style={styles.currencyPrefix}>$</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Amount</Text>
+              <View style={[styles.amountInputContainer, { backgroundColor: colors.inputBg, borderColor: colors.primary }]}>
+                <Text style={[styles.currencyPrefix, { color: colors.textSecondary }]}>$</Text>
                 <TextInput
-                  style={styles.amountInput}
+                  style={[styles.amountInput, { color: colors.text }]}
                   placeholder="0.00"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.textSecondary}
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="decimal-pad"
@@ -225,22 +227,23 @@ export default function TaskDetailScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Status</Text>
-              <View style={styles.segmentedControl}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Status</Text>
+              <View style={[styles.segmentedControl, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 {statusOptions.map(option => (
                   <TouchableOpacity
                     key={option.key}
                     style={[
                       styles.segmentButton,
-                      selectedStatus === option.key && styles.segmentButtonActive,
-                      selectedStatus === option.key && { backgroundColor: option.color + '20', borderColor: option.color }
+                      selectedStatus === option.key && { backgroundColor: theme === 'dark' ? '#333' : '#FFF7ED' },
+                      selectedStatus === option.key && { borderColor: option.color }
                     ]}
                     onPress={() => setSelectedStatus(option.key)}
                   >
                     <Text
                       style={[
                         styles.segmentText,
-                        selectedStatus === option.key && { color: option.color, fontWeight: '700' }
+                        { color: selectedStatus === option.key ? option.color : colors.textSecondary },
+                        selectedStatus === option.key && { fontWeight: '700' }
                       ]}
                     >
                       {option.label}
@@ -251,7 +254,7 @@ export default function TaskDetailScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Category</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Category</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.optionsRow}>
                   {categories.map(cat => (
@@ -259,7 +262,8 @@ export default function TaskDetailScreen() {
                       key={cat.id}
                       style={[
                         styles.optionChip,
-                        selectedCategory === cat.id && { backgroundColor: '#EF6A46', borderColor: '#EF6A46' }
+                        { borderColor: colors.border, backgroundColor: colors.inputBg },
+                        selectedCategory === cat.id && { backgroundColor: colors.primary, borderColor: colors.primary }
                       ]}
                       onPress={() => setSelectedCategory(
                         selectedCategory === cat.id ? null : cat.id
@@ -268,6 +272,7 @@ export default function TaskDetailScreen() {
                       <Text
                         style={[
                           styles.optionText,
+                          { color: colors.textSecondary },
                           selectedCategory === cat.id && { color: '#FFF', fontWeight: '700' }
                         ]}
                       >
@@ -280,7 +285,7 @@ export default function TaskDetailScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Priority</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Priority</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.optionsRow}>
                   {priorities.map(prio => (
@@ -288,6 +293,7 @@ export default function TaskDetailScreen() {
                       key={prio.id}
                       style={[
                         styles.optionChip,
+                        { borderColor: colors.border, backgroundColor: colors.inputBg },
                         selectedPriority === prio.id && { backgroundColor: prio.color + '20', borderColor: prio.color }
                       ]}
                       onPress={() => setSelectedPriority(
@@ -297,6 +303,7 @@ export default function TaskDetailScreen() {
                       <Text
                         style={[
                           styles.optionText,
+                          { color: colors.textSecondary },
                           selectedPriority === prio.id && { color: prio.color, fontWeight: '700' }
                         ]}
                       >
@@ -310,7 +317,7 @@ export default function TaskDetailScreen() {
 
             {isAdmin && drivers.length > 0 && (
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Assign to Driver</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Assign to Driver</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={styles.optionsRow}>
                     {drivers.map(driver => (
@@ -318,7 +325,8 @@ export default function TaskDetailScreen() {
                         key={driver.id}
                         style={[
                           styles.optionChip,
-                          selectedDriver === driver.id && { backgroundColor: '#EF6A46', borderColor: '#EF6A46' },
+                          { borderColor: colors.border, backgroundColor: colors.inputBg },
+                          selectedDriver === driver.id && { backgroundColor: colors.primary, borderColor: colors.primary },
                         ]}
                         onPress={() => setSelectedDriver(
                           selectedDriver === driver.id ? null : driver.id
@@ -327,12 +335,13 @@ export default function TaskDetailScreen() {
                         <Ionicons
                           name="person"
                           size={14}
-                          color={selectedDriver === driver.id ? '#FFF' : '#EF6A46'}
+                          color={selectedDriver === driver.id ? '#FFF' : colors.primary}
                         />
                         <Text
                           style={[
                             styles.optionText,
-                            selectedDriver === driver.id && { color: '#FFF', fontWeight: '700' },
+                            { color: selectedDriver === driver.id ? '#FFF' : colors.primary },
+                            selectedDriver === driver.id && { fontWeight: '700' },
                           ]}
                         >
                           {driver.name}
@@ -353,32 +362,32 @@ export default function TaskDetailScreen() {
           // View Mode (Updated Style)
           <>
             <View style={styles.titleSection}>
-              <Text style={styles.taskTitle}>{task.title}</Text>
-              <View style={styles.amountBadge}>
+              <Text style={[styles.taskTitle, { color: colors.headerText }]}>{task.title}</Text>
+              <View style={[styles.amountBadge, { backgroundColor: colors.primary }]}>
                 <Text style={styles.amountText}>${task.amount.toFixed(2)}</Text>
               </View>
             </View>
 
             {task.description ? (
-              <Text style={styles.description}>{task.description}</Text>
+              <Text style={[styles.description, { color: colors.textSecondary }]}>{task.description}</Text>
             ) : null}
 
             <View style={styles.tagsSection}>
               <View style={[
                 styles.tag, 
-                { backgroundColor: task.status === 'completed' ? '#D1FAE5' : '#FEF3C7' }
+                { backgroundColor: task.status === 'completed' ? (theme === 'dark' ? '#064E3B' : '#D1FAE5') : (theme === 'dark' ? '#78350F' : '#FEF3C7') }
               ]}>
                 <Text style={[
                   styles.tagText, 
-                  { color: task.status === 'completed' ? '#10B981' : '#D97706' }
+                  { color: task.status === 'completed' ? '#10B981' : '#F59E0B' }
                 ]}>
                   {task.status === 'completed' ? 'Completed' : 'Pending'}
                 </Text>
               </View>
 
               {getCategory(task.category_id) && (
-                <View style={[styles.tag, { backgroundColor: '#F3F4F6' }]}>
-                  <Text style={[styles.tagText, { color: '#4B5563' }]}>
+                <View style={[styles.tag, { backgroundColor: theme === 'dark' ? '#333' : '#F3F4F6' }]}>
+                  <Text style={[styles.tagText, { color: colors.textSecondary }]}>
                     {getCategory(task.category_id)!.name}
                   </Text>
                 </View>
@@ -393,40 +402,40 @@ export default function TaskDetailScreen() {
               )}
             </View>
 
-            <View style={styles.detailsCard}>
+            <View style={[styles.detailsCard, { backgroundColor: colors.card, shadowColor: theme === 'dark' ? '#000' : '#000' }]}>
               {isAdmin && getDriver(task.assigned_driver_id) && (
-                <View style={styles.detailRow}>
-                  <View style={styles.detailIcon}>
-                    <Ionicons name="person" size={20} color="#EF6A46" />
+                <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
+                  <View style={[styles.detailIcon, { backgroundColor: theme === 'dark' ? '#333' : '#FFF7ED' }]}>
+                    <Ionicons name="person" size={20} color={colors.primary} />
                   </View>
                   <View style={styles.detailContent}>
-                    <Text style={styles.detailLabel}>Assigned Driver</Text>
-                    <Text style={styles.detailValue}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Assigned Driver</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>
                       {getDriver(task.assigned_driver_id)!.name}
                     </Text>
                   </View>
                 </View>
               )}
 
-              <View style={styles.detailRow}>
-                <View style={styles.detailIcon}>
-                  <Ionicons name="time" size={20} color="#EF6A46" />
+              <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
+                <View style={[styles.detailIcon, { backgroundColor: theme === 'dark' ? '#333' : '#FFF7ED' }]}>
+                  <Ionicons name="time" size={20} color={colors.primary} />
                 </View>
                 <View style={styles.detailContent}>
-                  <Text style={styles.detailLabel}>Created On</Text>
-                  <Text style={styles.detailValue}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Created On</Text>
+                  <Text style={[styles.detailValue, { color: colors.text }]}>
                     {format(new Date(task.created_at), 'MMM d, yyyy h:mm a')}
                   </Text>
                 </View>
               </View>
 
               {task.completed_at && (
-                <View style={styles.detailRow}>
-                  <View style={styles.detailIcon}>
+                <View style={[styles.detailRow, { borderBottomColor: 'transparent' }]}>
+                  <View style={[styles.detailIcon, { backgroundColor: theme === 'dark' ? '#064E3B' : '#D1FAE5' }]}>
                     <Ionicons name="checkmark-circle" size={20} color="#10B981" />
                   </View>
                   <View style={styles.detailContent}>
-                    <Text style={styles.detailLabel}>Completed On</Text>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Completed On</Text>
                     <Text style={[styles.detailValue, { color: '#10B981' }]}>
                       {format(new Date(task.completed_at), 'MMM d, yyyy h:mm a')}
                     </Text>
@@ -436,7 +445,7 @@ export default function TaskDetailScreen() {
             </View>
 
             {task.status !== 'completed' && (
-              <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
+              <TouchableOpacity style={[styles.completeButton, { backgroundColor: '#10B981' }]} onPress={handleComplete}>
                 <Text style={styles.completeButtonText}>Mark as Completed</Text>
               </TouchableOpacity>
             )}

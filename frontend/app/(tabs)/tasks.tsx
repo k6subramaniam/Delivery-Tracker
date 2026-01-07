@@ -15,13 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/services/api';
-import { TaskCard } from '../../src/components/TaskCard';
-import { Task, Category, Priority, User } from '../../src/types';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useTheme } from '../../src/context/ThemeContext';
 
 export default function TasksScreen() {
   const { user } = useAuth();
+  const { colors, theme } = useTheme();
   const router = useRouter();
+
   const params = useLocalSearchParams();
   const isAdmin = user?.role === 'admin';
 
@@ -52,6 +52,9 @@ export default function TasksScreen() {
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
 
   const loadData = async () => {
+    // Only set loading on initial load, not during refresh
+    if (tasks.length === 0 && loading) setLoading(true);
+    
     try {
       const statusFilter = filter === 'all' ? undefined : filter;
       const [tasksRes, catsRes, priosRes] = await Promise.all([

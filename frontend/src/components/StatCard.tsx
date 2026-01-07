@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 interface StatCardProps {
   title: string;
@@ -11,15 +12,17 @@ interface StatCardProps {
 }
 
 export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color, subtitle }) => {
+  const { colors } = useTheme();
+
   return (
-    <View style={[styles.card, { borderLeftColor: color }]}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderLeftColor: color }]}>
       <View style={[styles.iconContainer, { backgroundColor: color + '15' }]}>
         <Ionicons name={icon} size={24} color={color} />
       </View>
       <View style={styles.content}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, { color: colors.textSecondary }]}>{title}</Text>
         <Text style={[styles.value, { color }]}>{value}</Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        {subtitle && <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
       </View>
     </View>
   );
@@ -27,7 +30,6 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color, s
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -52,7 +54,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 13,
-    color: '#6B7280',
     marginBottom: 4,
   },
   value: {
@@ -61,7 +62,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginTop: 2,
   },
 });

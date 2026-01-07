@@ -25,7 +25,6 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const { colors, theme } = useTheme();
 
-
   const loadLocations = async () => {
     try {
       const response = await driversAPI.getLocations();
@@ -95,9 +94,6 @@ export default function MapScreen() {
               ))}
             </View>
             
-            {/* Store markers (Static for visual) */}
-            {/* REMOVED as requested */}
-
             {/* Driver markers positioned randomly for visual */}
             {locations.length > 0 ? (
               locations.map((loc, index) => {
@@ -140,9 +136,11 @@ export default function MapScreen() {
                   <View style={styles.cardHeader}>
                     <Text style={[styles.driverName, { color: colors.primary }]}>Package Delivery - {location.driver_name}</Text>
                   </View>
-                  <Text style={[styles.addressText, { color: colors.textSecondary }]}>123 Main St, Suite 4B</Text>
+                  <Text style={[styles.addressText, { color: colors.textSecondary }]}>
+                    {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                  </Text>
                   <View style={styles.cardFooter}>
-                    <Text style={[styles.distanceText, { color: colors.text }]}>0.5 miles</Text>
+                    <Text style={[styles.distanceText, { color: colors.text }]}>Active</Text>
                     <View style={[styles.statusBadge, { backgroundColor: theme === 'dark' ? '#442' : '#FEF3C7' }]}>
                       <Text style={[styles.statusText, { color: '#D97706' }]}>Pending</Text>
                     </View>

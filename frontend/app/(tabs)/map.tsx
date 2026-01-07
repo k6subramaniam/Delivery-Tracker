@@ -125,12 +125,19 @@ export default function MapScreen() {
         {/* Map Visual Representation */}
         <View style={styles.mapVisual}>
           <View style={[styles.mapBackground, { backgroundColor: theme === 'dark' ? '#333' : '#E5E7EB' }]}>
-            <WebView
-              originWhitelist={['*']}
-              source={{ html: mapHtml }}
-              style={{ flex: 1 }}
-              scrollEnabled={false}
-            />
+            {Platform.OS === 'web' ? (
+               <iframe
+                 srcDoc={mapHtml}
+                 style={{ width: '100%', height: '100%', border: 'none' }}
+               />
+            ) : (
+              <WebView
+                originWhitelist={['*']}
+                source={{ html: mapHtml }}
+                style={{ flex: 1 }}
+                scrollEnabled={false}
+              />
+            )}
           </View>
         </View>
 

@@ -494,29 +494,63 @@ async def get_driver_location(driver_id: str, current_user: dict = Depends(get_a
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     query = {}
     if current_user["role"] == "driver":
-        query["assigned_driver_id"] = current_user["id"]
+        query["$or"] = [
+            {"assigned_driver_id": current_user["id"]},
+            {"created_by": current_user["id"]}
+        ]
     
     total_tasks = await db.tasks.count_documents(query)
-    pending_tasks = await db.tasks.count_documents({**query, "status": "pending"})
-    # in_progress_tasks is removed as requested, keeping variable for API compatibility if needed but setting to 0 or removing
-    # Removing completely from response to match requirement
-    completed_tasks = await db.tasks.count_documents({**query, "status": "completed"})
-    
-    # Calculate total earnings from completed tasks
-    pipeline = [
-        {"$match": {**query, "status": "completed"}},
-        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-    ]
-    result = await db.tasks.aggregate(pipeline).to_list(1)
-    total_earnings = result[0]["total"] if result else 0
-    
-    # Get overdue tasks
-    now = datetime.utcnow()
-    overdue_tasks = await db.tasks.count_documents({
-        **query,
-        "status": {"$ne": "completed"},
-        "due_date": {"$lt": now, "$ne": None}
-    })
+    # Match dashboard filtering logic - Pending tasks
+    pending_query = query.copy()
+    if "$or" in query:
+        # Complex logic for $or with additional filters in mock db might be tricky
+        # but let's try direct dict update which MockDB should handle via recursion or loop
+        # Wait, for $or, we need to apply status=pending to EACH branch or use $and
+        # But MockDB simple matches implementation might not support $and wrapping $or easily
+        # Let's keep it simple: filter in python if needed, or trust MockDB _matches
+        # Actually, MockDB count_documents just iterates and checks matches.
+        # We can wrap in $and: [{"$or": ...}, {"status": "pending"}]
+        # But MockDB _matches doesn't support $and explicit operator in my implementation!
+        
+        # Simpler approach for MockDB environment:
+        # Fetch all for user, then count
+        pass 
+    else:
+        pending_query["status"] = "pending"
+
+    # Re-implementing count manually for drivers to ensure accuracy with OR logic
+    if current_user["role"] == "driver":
+        all_tasks = await db.tasks.find(query).to_list(10000)
+        total_tasks = len(all_tasks)
+        pending_tasks = sum(1 for t in all_tasks if t.get("status") == "pending")
+        completed_tasks = sum(1 for t in all_tasks if t.get("status") == "completed")
+        
+        total_earnings = sum(t.get("amount", 0) for t in all_tasks if t.get("status") == "completed")
+        
+        now = datetime.utcnow()
+        overdue_tasks = sum(1 for t in all_tasks if t.get("status") != "completed" and t.get("due_date") and t.get("due_date") < now)
+        
+    else:
+        # Admin logic (standard)
+        total_tasks = await db.tasks.count_documents(query)
+        pending_tasks = await db.tasks.count_documents({**query, "status": "pending"})
+        completed_tasks = await db.tasks.count_documents({**query, "status": "completed"})
+        
+        # Calculate total earnings from completed tasks
+        pipeline = [
+            {"$match": {**query, "status": "completed"}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+        ]
+        result = await db.tasks.aggregate(pipeline).to_list(1)
+        total_earnings = result[0]["total"] if result else 0
+        
+        # Get overdue tasks
+        now = datetime.utcnow()
+        overdue_tasks = await db.tasks.count_documents({
+            **query,
+            "status": {"$ne": "completed"},
+            "due_date": {"$lt": now, "$ne": None}
+        })
     
     # Driver count (admin only)
     driver_count = 0
@@ -541,11 +575,17 @@ async def get_driver_payments(current_user: dict = Depends(get_admin_user)):
     for driver in drivers:
         driver_id = driver["id"]
         
-        # Get tasks for this driver
-        tasks = await db.tasks.find({"assigned_driver_id": driver_id}).to_list(1000)
+        # Get tasks for this driver - using OR logic to catch tasks they created OR were assigned
+        query = {
+            "$or": [
+                {"assigned_driver_id": driver_id},
+                {"created_by": driver_id}
+            ]
+        }
+        tasks = await db.tasks.find(query).to_list(1000)
         
         completed_tasks = [t for t in tasks if t.get("status") == "completed"]
-        pending_tasks = [t for t in tasks if t.get("status") != "completed"]
+        pending_tasks = [t for t in tasks if t.get("status") == "pending"]
         
         total_earnings = sum(t.get("amount", 0) for t in completed_tasks)
         pending_amount = sum(t.get("amount", 0) for t in pending_tasks)

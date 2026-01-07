@@ -143,7 +143,6 @@ export default function TaskDetailScreen() {
 
   const statusOptions = [
     { key: 'pending', label: 'Pending', color: '#6B7280' },
-    { key: 'in-progress', label: 'In Progress', color: '#F59E0B' },
     { key: 'completed', label: 'Completed', color: '#10B981' },
   ];
 

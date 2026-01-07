@@ -149,7 +149,6 @@ export default function TasksScreen() {
   const filterOptions = [
     { key: 'all', label: 'All' },
     { key: 'pending', label: 'Pending' },
-    { key: 'in-progress', label: 'In Progress' },
     { key: 'completed', label: 'Completed' },
   ];
 

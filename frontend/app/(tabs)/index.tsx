@@ -46,7 +46,7 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const promises: Promise<any>[] = [
         dashboardAPI.getStats(),
@@ -90,14 +90,14 @@ export default function DashboardScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdmin, user]);
 
   useFocusEffect(
     useCallback(() => {
       loadData();
       const interval = setInterval(loadData, 30000);
       return () => clearInterval(interval);
-    }, [user])
+    }, [loadData])
   );
 
   const onRefresh = useCallback(async () => {

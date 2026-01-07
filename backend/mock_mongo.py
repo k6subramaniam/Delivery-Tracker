@@ -195,9 +195,8 @@ class MockDB:
         self.collections = {
             "users": MockCollection("users", self),
             "tasks": MockCollection("tasks", self),
-            "categories": MockCollection("categories", self),
-            "priorities": MockCollection("priorities", self),
-            "locations": MockCollection("locations", self)
+            "locations": MockCollection("locations", self),
+            "messages": MockCollection("messages", self)
         }
         self._load()
         

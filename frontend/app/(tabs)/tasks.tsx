@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/services/api';
 import { useTheme } from '../../src/context/ThemeContext';
@@ -55,9 +55,6 @@ export default function TasksScreen() {
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
 
   const loadData = async () => {
-    // Only set loading on initial load, not during refresh
-    if (tasks.length === 0 && loading) setLoading(true);
-    
     try {
       const statusFilter = filter === 'all' ? undefined : filter;
       const [tasksRes, catsRes, priosRes] = await Promise.all([
@@ -80,9 +77,13 @@ export default function TasksScreen() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [filter]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      const interval = setInterval(loadData, 30000);
+      return () => clearInterval(interval);
+    }, [filter])
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

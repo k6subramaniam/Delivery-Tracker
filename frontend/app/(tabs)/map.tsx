@@ -9,7 +9,9 @@ import {
   TouchableOpacity,
   Linking,
   TextInput,
+  Platform,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { driversAPI } from '../../src/services/api';
@@ -53,6 +55,45 @@ export default function MapScreen() {
     Linking.openURL(url);
   };
 
+  const mapHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+          body { margin: 0; padding: 0; }
+          #map { width: 100%; height: 100vh; }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script>
+          var map = L.map('map').setView([43.6532, -79.3832], 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(map);
+
+          var locations = ${JSON.stringify(locations)};
+          var bounds = L.latLngBounds();
+
+          if (locations.length > 0) {
+            locations.forEach(function(loc) {
+              var marker = L.marker([loc.latitude, loc.longitude]).addTo(map);
+              marker.bindPopup("<b>" + loc.driver_name + "</b><br>Active");
+              bounds.extend([loc.latitude, loc.longitude]);
+            });
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+          } else {
+             // Default view if no locations
+             map.setView([43.6532, -79.3832], 13);
+          }
+        </script>
+      </body>
+    </html>
+  `;
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -84,35 +125,12 @@ export default function MapScreen() {
         {/* Map Visual Representation */}
         <View style={styles.mapVisual}>
           <View style={[styles.mapBackground, { backgroundColor: theme === 'dark' ? '#333' : '#E5E7EB' }]}>
-            {/* Grid lines for visual effect */}
-            <View style={[styles.gridOverlay, { backgroundColor: theme === 'dark' ? '#222' : '#F3F4F6' }]}>
-              {[...Array(5)].map((_, i) => (
-                <View key={`h-${i}`} style={[styles.gridLine, styles.horizontalLine, { top: `${i * 25}%`, backgroundColor: theme === 'dark' ? '#444' : '#FFFFFF' }]} />
-              ))}
-              {[...Array(5)].map((_, i) => (
-                <View key={`v-${i}`} style={[styles.gridLine, styles.verticalLine, { left: `${i * 25}%`, backgroundColor: theme === 'dark' ? '#444' : '#FFFFFF' }]} />
-              ))}
-            </View>
-            
-            {/* Driver markers positioned randomly for visual */}
-            {locations.length > 0 ? (
-              locations.map((loc, index) => {
-                const xPercent = ((Math.abs(loc.longitude) % 90) / 90) * 80 + 10;
-                const yPercent = ((Math.abs(loc.latitude) % 90) / 90) * 80 + 10;
-                return (
-                  <TouchableOpacity
-                    key={loc.driver_id}
-                    style={[styles.mapMarker, { left: `${xPercent}%`, top: `${yPercent}%` }]}
-                    onPress={() => openInMaps(loc.latitude, loc.longitude)}
-                  >
-                    <View style={[styles.markerPulse, { backgroundColor: colors.primary }]} />
-                    <View style={[styles.markerDot, { backgroundColor: colors.primary, borderColor: colors.card }]}>
-                      <Ionicons name="bus" size={16} color="#FFFFFF" />
-                    </View>
-                  </TouchableOpacity>
-                );
-              })
-            ) : null }
+            <WebView
+              originWhitelist={['*']}
+              source={{ html: mapHtml }}
+              style={{ flex: 1 }}
+              scrollEnabled={false}
+            />
           </View>
         </View>
 
@@ -134,7 +152,8 @@ export default function MapScreen() {
                   onPress={() => openInMaps(location.latitude, location.longitude)}
                 >
                   <View style={styles.cardHeader}>
-                    <Text style={[styles.driverName, { color: colors.primary }]}>Package Delivery - {location.driver_name}</Text>
+                    <Text style={[styles.taskTitle, { color: colors.primary }]}>Package Delivery</Text>
+                    <Text style={[styles.driverName, { color: colors.text }]}>{location.driver_name}</Text>
                   </View>
                   <Text style={[styles.addressText, { color: colors.textSecondary }]}>
                     {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
@@ -345,10 +364,14 @@ const styles = StyleSheet.create({
   cardHeader: {
     marginBottom: 4,
   },
-  driverName: {
+  taskTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#EF6A46', // Orange name
+    marginBottom: 4,
+  },
+  driverName: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   addressText: {
     fontSize: 14,

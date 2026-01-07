@@ -108,6 +108,17 @@ class MockCollection:
     def _matches(self, doc, query):
         if not query: return True
         for k, v in query.items():
+            if k == "$or":
+                # Handle $or operator: matches if ANY sub-query matches
+                match_found = False
+                for sub_query in v:
+                    if self._matches(doc, sub_query):
+                        match_found = True
+                        break
+                if not match_found:
+                    return False
+                continue
+
             if isinstance(v, dict):
                  if "$ne" in v:
                      if doc.get(k) == v["$ne"]:

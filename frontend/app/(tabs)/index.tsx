@@ -281,14 +281,14 @@ export default function DashboardScreen() {
                     <View style={[styles.earningIcon, { backgroundColor: theme === 'dark' ? '#333' : '#FFF7ED' }]}>
                       <Ionicons name="person" size={20} color={colors.primary} />
                     </View>
-                    <View>
-                      <Text style={[styles.earningName, { color: colors.text }]}>{earning.driver_name}</Text>
-                      <Text style={[styles.earningSubtext, { color: colors.textSecondary }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.earningName, { color: colors.text }]} numberOfLines={1}>{earning.driver_name}</Text>
+                      <Text style={[styles.earningSubtext, { color: colors.textSecondary }]} numberOfLines={1}>
                         {earning.task_count} completed • {earning.pending_count} pending
                       </Text>
                     </View>
                   </View>
-                  <View style={{ alignItems: 'flex-end' }}>
+                  <View style={{ alignItems: 'flex-end', marginLeft: 8, minWidth: 80 }}>
                     <Text style={[styles.earningAmount, { color: colors.text }]}>${earning.total_earnings.toFixed(2)}</Text>
                     {earning.pending_amount > 0 && (
                       <Text style={[styles.earningSubtext, { color: '#F59E0B' }]}>

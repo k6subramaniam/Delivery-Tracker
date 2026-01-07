@@ -13,9 +13,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/services/api';
 import { useTheme } from '../../src/context/ThemeContext';
+import { TaskCard } from '../../src/components/TaskCard';
+import { Task, Category, Priority, User } from '../../src/types';
 
 export default function TasksScreen() {
   const { user } = useAuth();

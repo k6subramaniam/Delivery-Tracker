@@ -12,8 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { tasksAPI, categoriesAPI, prioritiesAPI, driversAPI } from '../../src/services/api';
-import { Task, Category, Priority, User } from '../../src/types';
+import { tasksAPI, driversAPI } from '../../src/services/api';
+import { Task, User } from '../../src/types';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { format } from 'date-fns';
@@ -26,8 +26,6 @@ export default function TaskDetailScreen() {
   const isAdmin = user?.role === 'admin';
 
   const [task, setTask] = useState<Task | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [priorities, setPriorities] = useState<Priority[]>([]);
   const [drivers, setDrivers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,8 +35,6 @@ export default function TaskDetailScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('pending');
 
@@ -48,23 +44,15 @@ export default function TaskDetailScreen() {
 
   const loadData = async () => {
     try {
-      const [taskRes, catsRes, priosRes] = await Promise.all([
-        tasksAPI.getOne(id!),
-        categoriesAPI.getAll(),
-        prioritiesAPI.getAll(),
-      ]);
+      const taskRes = await tasksAPI.getOne(id!);
       
       const taskData = taskRes.data;
       setTask(taskData);
-      setCategories(catsRes.data);
-      setPriorities(priosRes.data);
 
       // Set form values
       setTitle(taskData.title);
       setDescription(taskData.description || '');
       setAmount(taskData.amount.toString());
-      setSelectedCategory(taskData.category_id);
-      setSelectedPriority(taskData.priority_id);
       setSelectedDriver(taskData.assigned_driver_id);
       setSelectedStatus(taskData.status);
 
@@ -97,8 +85,6 @@ export default function TaskDetailScreen() {
         title: title.trim(),
         description: description.trim(),
         amount: parseFloat(amount),
-        category_id: selectedCategory,
-        priority_id: selectedPriority,
         assigned_driver_id: selectedDriver,
         status: selectedStatus,
       });
@@ -138,8 +124,6 @@ export default function TaskDetailScreen() {
     }
   };
 
-  const getCategory = (catId: string | null) => categories.find(c => c.id === catId);
-  const getPriority = (prioId: string | null) => priorities.find(p => p.id === prioId);
   const getDriver = (driverId: string | null) => drivers.find(d => d.id === driverId);
 
   const statusOptions = [
@@ -253,68 +237,6 @@ export default function TaskDetailScreen() {
               </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.optionsRow}>
-                  {categories.map(cat => (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[
-                        styles.optionChip,
-                        { borderColor: colors.border, backgroundColor: colors.inputBg },
-                        selectedCategory === cat.id && { backgroundColor: colors.primary, borderColor: colors.primary }
-                      ]}
-                      onPress={() => setSelectedCategory(
-                        selectedCategory === cat.id ? null : cat.id
-                      )}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          { color: colors.textSecondary },
-                          selectedCategory === cat.id && { color: '#FFF', fontWeight: '700' }
-                        ]}
-                      >
-                        {cat.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Priority</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.optionsRow}>
-                  {priorities.map(prio => (
-                    <TouchableOpacity
-                      key={prio.id}
-                      style={[
-                        styles.optionChip,
-                        { borderColor: colors.border, backgroundColor: colors.inputBg },
-                        selectedPriority === prio.id && { backgroundColor: prio.color + '20', borderColor: prio.color }
-                      ]}
-                      onPress={() => setSelectedPriority(
-                        selectedPriority === prio.id ? null : prio.id
-                      )}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          { color: colors.textSecondary },
-                          selectedPriority === prio.id && { color: prio.color, fontWeight: '700' }
-                        ]}
-                      >
-                        {prio.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-
             {isAdmin && drivers.length > 0 && (
               <View style={styles.formGroup}>
                 <Text style={[styles.label, { color: colors.textSecondary }]}>Assign to Driver</Text>
@@ -384,22 +306,6 @@ export default function TaskDetailScreen() {
                   {task.status === 'completed' ? 'Completed' : 'Pending'}
                 </Text>
               </View>
-
-              {getCategory(task.category_id) && (
-                <View style={[styles.tag, { backgroundColor: theme === 'dark' ? '#333' : '#F3F4F6' }]}>
-                  <Text style={[styles.tagText, { color: colors.textSecondary }]}>
-                    {getCategory(task.category_id)!.name}
-                  </Text>
-                </View>
-              )}
-              
-              {getPriority(task.priority_id) && (
-                <View style={[styles.tag, { backgroundColor: getPriority(task.priority_id)!.color + '20' }]}>
-                  <Text style={[styles.tagText, { color: getPriority(task.priority_id)!.color }]}>
-                    {getPriority(task.priority_id)!.name}
-                  </Text>
-                </View>
-              )}
             </View>
 
             <View style={[styles.detailsCard, { backgroundColor: colors.card, shadowColor: theme === 'dark' ? '#000' : '#000' }]}>

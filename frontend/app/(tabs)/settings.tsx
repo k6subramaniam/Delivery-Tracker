@@ -14,7 +14,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { categoriesAPI, prioritiesAPI, locationAPI } from '../../src/services/api';
+import { Category, Priority } from '../../src/types';
+import * as Location from 'expo-location';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();

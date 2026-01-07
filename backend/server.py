@@ -498,7 +498,8 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     
     total_tasks = await db.tasks.count_documents(query)
     pending_tasks = await db.tasks.count_documents({**query, "status": "pending"})
-    in_progress_tasks = await db.tasks.count_documents({**query, "status": "in-progress"})
+    # in_progress_tasks is removed as requested, keeping variable for API compatibility if needed but setting to 0 or removing
+    # Removing completely from response to match requirement
     completed_tasks = await db.tasks.count_documents({**query, "status": "completed"})
     
     # Calculate total earnings from completed tasks
@@ -525,7 +526,6 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     return {
         "total_tasks": total_tasks,
         "pending_tasks": pending_tasks,
-        "in_progress_tasks": in_progress_tasks,
         "completed_tasks": completed_tasks,
         "overdue_tasks": overdue_tasks,
         "total_earnings": total_earnings,

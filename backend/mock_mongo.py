@@ -1,7 +1,9 @@
-import asyncio
+import json
+import os
 from datetime import datetime
 
 class MockCursor:
+    # ... (same as before)
     def __init__(self, data):
         self.data = data
         self._skip = 0
@@ -30,11 +32,14 @@ class MockCursor:
         return self.data[start:end]
 
 class MockCollection:
-    def __init__(self):
+    def __init__(self, name, db):
+        self.name = name
+        self.db = db
         self.documents = []
 
     async def insert_one(self, doc):
         self.documents.append(doc)
+        self.db._save()
         return True
 
     async def find_one(self, query):
@@ -58,6 +63,7 @@ class MockCollection:
         if doc:
             if "$set" in update:
                 doc.update(update["$set"])
+            self.db._save()
             return doc
         return None
 
@@ -65,6 +71,7 @@ class MockCollection:
         doc = await self.find_one(query)
         if doc:
             self.documents.remove(doc)
+            self.db._save()
             class Result:
                 deleted_count = 1
             return Result()
@@ -84,17 +91,19 @@ class MockCollection:
         if doc:
             if "$set" in update:
                 doc.update(update["$set"])
+            self.db._save()
         elif upsert:
              new_doc = query.copy()
              if "$set" in update:
                 new_doc.update(update["$set"])
              self.documents.append(new_doc)
+             self.db._save()
         return True
 
     async def aggregate(self, pipeline):
+        # ... (same aggregate implementation as before)
         match_stage = next((s for s in pipeline if "$match" in s), None)
         group_stage = next((s for s in pipeline if "$group" in s), None)
-        lookup_stage = next((s for s in pipeline if "$lookup" in s), None)
         
         filtered = self.documents
         if match_stage:
@@ -142,7 +151,6 @@ class MockCollection:
         if not query: return True
         for k, v in query.items():
             if k == "$or":
-                # Handle $or operator: matches if ANY sub-query matches
                 match_found = False
                 for sub_query in v:
                     if self._matches(doc, sub_query):
@@ -156,8 +164,6 @@ class MockCollection:
                  if "$ne" in v:
                      if doc.get(k) == v["$ne"]:
                          return False
-                     # If the field is missing and we check != None, it's effectively match if None != val
-                     # But $ne: None checks if it IS NOT None.
                  if "$lt" in v:
                      if doc.get(k) is None or not (doc.get(k) < v["$lt"]):
                          return False
@@ -165,20 +171,69 @@ class MockCollection:
                 return False
         return True
 
+# Custom JSON Encoder for datetime
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        return super().default(o)
+
+def datetime_hook(json_dict):
+    for (key, value) in json_dict.items():
+        if isinstance(value, str):
+            try:
+                # Try to parse ISO format strings back to datetime
+                if len(value) > 10 and value[10] == 'T':
+                     json_dict[key] = datetime.fromisoformat(value)
+            except (ValueError, IndexError):
+                pass
+    return json_dict
+
 class MockDB:
     def __init__(self):
-        self.users = MockCollection()
-        self.tasks = MockCollection()
-        self.categories = MockCollection()
-        self.priorities = MockCollection()
-        self.locations = MockCollection()
+        self.file_path = "mock_db.json"
+        self.collections = {
+            "users": MockCollection("users", self),
+            "tasks": MockCollection("tasks", self),
+            "categories": MockCollection("categories", self),
+            "priorities": MockCollection("priorities", self),
+            "locations": MockCollection("locations", self)
+        }
+        self._load()
+        
+    def _load(self):
+        if os.path.exists(self.file_path):
+            try:
+                with open(self.file_path, 'r') as f:
+                    data = json.load(f, object_hook=datetime_hook)
+                    for name, docs in data.items():
+                        if name in self.collections:
+                            self.collections[name].documents = docs
+            except Exception as e:
+                print(f"Error loading mock db: {e}")
+
+    def _save(self):
+        try:
+            data = {name: col.documents for name, col in self.collections.items()}
+            with open(self.file_path, 'w') as f:
+                json.dump(data, f, cls=DateTimeEncoder)
+        except Exception as e:
+            print(f"Error saving mock db: {e}")
+
+    def __getattr__(self, name):
+        if name in self.collections:
+            return self.collections[name]
+        raise AttributeError(f"Collection {name} not found")
         
     def __getitem__(self, name):
         return getattr(self, name)
 
+# Singleton DB instance to ensure persistence across Client instantiations
+_db_instance = MockDB()
+
 class AsyncIOMotorClient:
     def __init__(self, url):
-        self.db = MockDB()
+        self.db = _db_instance
     
     def __getitem__(self, name):
         return self.db

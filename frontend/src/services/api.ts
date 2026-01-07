@@ -70,6 +70,7 @@ export const locationAPI = {
 // Dashboard API
 export const dashboardAPI = {
   getStats: () => api.get('/dashboard/stats'),
+  getDriverPayments: () => api.get('/dashboard/admin/driver-payments'),
 };
 
 export default api;

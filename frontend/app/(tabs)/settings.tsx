@@ -15,10 +15,12 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { locationAPI, adminAPI } from '../../src/services/api';
 import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme, colors } = useTheme();
+  const router = useRouter();
   const isDriver = user?.role === 'driver';
   const isAdmin = user?.role === 'admin';
 
@@ -232,6 +234,18 @@ export default function SettingsScreen() {
               <View style={styles.menuDivider} />
             </>
           )}
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => {
+             router.push('/chat/e43cc6bf-1a46-4863-8aae-33c947fe83fc'); // Demo Admin ID from mock_db
+          }}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="chatbubble-ellipses-outline" size={20} color="#EF6A46" />
+            </View>
+            <Text style={styles.menuText}>Contact Admin</Text>
+            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
 
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuIconContainer}>
